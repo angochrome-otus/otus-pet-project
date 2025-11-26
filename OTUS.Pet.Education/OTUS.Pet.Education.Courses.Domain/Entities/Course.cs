@@ -28,5 +28,5 @@ public class Course : Entity
     /// <summary>
     /// Описание курса
     /// </summary>
-    public string Subject { get; set; } = string.Empty;
+    public Subject Subject { get; set; } = null!;
 }
