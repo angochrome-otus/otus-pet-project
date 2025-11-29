@@ -1,0 +1,116 @@
+# Visual Studio / .NET Core
+.vs/
+*.user
+*.suo
+.suo
+*.userosscache
+*.sln.docstates
+.vscode/
+
+# Build results
+bin/
+obj/
+out/
+artifacts/
+
+# Rider
+.idea/
+*.sln.iml
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# NuGet
+*.nupkg
+packages/
+project.lock.json
+project.fragment.lock.json
+
+# npm / node
+node_modules/
+npm-debug.log*
+package-lock.json
+
+# Test results
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+*.lcov
+
+# Publish / deployment
+publish/
+*.publishsettings
+
+# User-specific files
+*.env
+.env.*
+local.settings.json
+secrets.json
+secrets.*
+*.local
+appsettings.*.Local.json
+
+# Certificates
+*.pfx
+*.cer
+
+# Database files
+*.mdf
+*.ldf
+*.sqlite
+*.db
+
+# JetBrains
+.idea/
+*.dotCover
+
+# Resharper
+_ReSharper*/
+*.DotSettings.user
+
+# Visual Studio Code workspace and history
+.history/
+.vscode/
+
+# Coverage and profiling
+*.ncrunch*
+*.coverage
+*.coveragexml
+
+# Misc
+*.bak
+*.tmp
+*.swp
+
+# Ignore database/IDE cache files
+*.dtbcache.v2
+.dtbcache.v2
+
+# Files created by GitHub Copilot / AI assistants - exclude anything Copilot or assistant might create
+.copilot/
+.copilot.*
+*copilot*
+copilot.*
+copilot-*
+.assistant/
+*.assistant*
+
+# Local development files that shouldn't be shared
+launchSettings.json
+*.userprefs
+
+# Rider caches
+.idea/
+*.sublime-workspace
+
+# Ignore user-specific VS Code settings (if you want to share workspace settings, remove this)
+.vscode/*
+!.vscode/extensions.json
+
+# End of .gitignore
