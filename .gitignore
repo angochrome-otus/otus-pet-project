@@ -267,3 +267,5 @@ __pycache__/
 /.tools/linq2db.t4models
 */coverage.json
 .DS_Store
+
+.vscode/*
