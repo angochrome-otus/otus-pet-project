@@ -8,6 +8,7 @@ namespace OTUS.Pet.Education.Courses.Infrastructure.Interfaces.Model
 {
     public interface ISubjectLayer : IDataCRUD<Subject>
     {
-
+        Task<List<Subject>> Get(int limit);
+        Task<Subject?> GetByName(string name);
     }
 }

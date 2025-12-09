@@ -9,13 +9,43 @@ using OTUS.Pet.Education.Courses.Infrastructure.Interfaces.Model;
 
 namespace OTUS.Pet.Education.Courses.Infrastructure.DataLayers.Model
 {
-    public class SubjectLayer : ISubjectLayer
+    public class SubjectLayer : ISubjectLayer, IDisposable
     {
         private readonly IDBContext _dbContext;
         public SubjectLayer(IDBContext dbContext)
         {
             _dbContext = dbContext;
         }
+
+        #region Dispose
+        private bool disposed = false;
+
+        // реализация интерфейса IDisposable.
+        public void Dispose()
+        {
+            // освобождаем неуправляемые ресурсы
+            Dispose(true);
+            // подавляем финализацию
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposed) return;
+            if (disposing)
+            {
+                // Освобождаем управляемые ресурсы
+            }
+            // освобождаем неуправляемые объекты
+            disposed = true;
+        }
+
+        // Деструктор
+        ~SubjectLayer()
+        {
+            Dispose(false);
+        }
+        #endregion
 
         /// <inheritdoc/>
         public async Task AddMany(List<Subject> arg)
@@ -117,6 +147,16 @@ namespace OTUS.Pet.Education.Courses.Infrastructure.DataLayers.Model
                 return null;
 
             return subject;
+        }
+
+        public async Task<List<Subject>> Get(int limit)
+        {
+            return _dbContext.Subjects.Take(limit).ToList();
+        }
+
+        public async Task<Subject?> GetByName(string name)
+        {
+            return _dbContext.Subjects.AsNoTracking().FirstOrDefault(c => c.Name.ToLower() == name.ToLower());
         }
     }
 }

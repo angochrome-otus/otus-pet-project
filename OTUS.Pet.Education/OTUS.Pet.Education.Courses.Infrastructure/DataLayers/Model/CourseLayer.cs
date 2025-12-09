@@ -27,6 +27,10 @@ namespace OTUS.Pet.Education.Courses.Infrastructure.DataLayers.Model
         /// <inheritdoc/>
         public async Task AddSingle(Course arg)
         {
+            if (arg.Subject.Id != default)
+            {
+                _dbContext.Subjects.Attach(arg.Subject);
+            }
             await _dbContext.Courses.AddAsync(arg);
             await _dbContext._context.SaveChangesAsync();
         }

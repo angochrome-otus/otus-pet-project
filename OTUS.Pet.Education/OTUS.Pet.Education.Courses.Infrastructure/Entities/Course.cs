@@ -33,7 +33,6 @@ public class Course : IEntity, IEntityUpdater<Course>
     /// <summary>
     /// Описание курса
     /// </summary>
-
     public Subject Subject { get; set; } = null!;
 
     /// <inheritdoc/>

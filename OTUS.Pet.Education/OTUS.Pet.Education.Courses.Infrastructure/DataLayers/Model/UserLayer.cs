@@ -27,6 +27,30 @@ namespace OTUS.Pet.Education.Courses.Infrastructure.DataLayers.Model
         /// <inheritdoc/>
         public async Task AddSingle(User arg)
         {
+            // Попытка устранения дублей ролей. Проблема наличия для каждого пользователя свой записи роли.
+            // if (arg.Roles is not null && arg.Roles.Count > 0)
+            // {
+            //     try
+            //     {
+            //         var mapValues = arg.Roles.ToDictionary(key => key.Name, value => value);
+            //         var roles = _dbContext.Roles.Where(r => mapValues.Keys.Contains(r.Name));
+            //         foreach (var role in roles)
+            //         {
+            //             if (!mapValues.TryGetValue(role.Name, out var userRole))
+            //             {
+            //                 // Придумать exception
+            //                 throw new Exception("");
+            //             }
+
+            //             arg.Roles.Remove(userRole);
+            //             arg.Roles.Add(role);
+            //         }
+            //     }
+            //     catch (Exception ex)
+            //     {
+            //         throw new Exception("Dublicate user roles!", ex);
+            //     }
+            // }
             await _dbContext.Users.AddAsync(arg);
             await _dbContext._context.SaveChangesAsync();
         }
@@ -117,6 +141,13 @@ namespace OTUS.Pet.Education.Courses.Infrastructure.DataLayers.Model
                 return null;
 
             return user;
+        }
+
+        /// <inheritdoc/>
+        public async Task<User?> GetByFMLName(User user)
+        {
+            var users = _dbContext.Users.Where(c => c.FirstName.ToLower() == user.FirstName.ToLower() && c.MiddleName.ToLower() == user.MiddleName.ToLower() && c.LastName == user.LastName.ToLower());
+            return users.FirstOrDefault();
         }
     }
 }
