@@ -46,5 +46,13 @@ namespace OTUS.Pet.Education.Courses.WebApi.Controllers
             });
             return Ok("OK");
         }
+
+        [HttpPost]
+        [Route("GetCourses")]
+        public async Task<ActionResult<List<Course>>> GetCourses()
+        {
+            var courses = await _courseLayer.Get(100);
+            return courses.Select(c => new Course { Name = c.Name, StartDate = c.StartDate, EndDate = c.EndDate, Subject = new Subject { Name = c.Subject.Name }}).ToList();
+        }
     }
 }

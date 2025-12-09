@@ -8,6 +8,6 @@ namespace OTUS.Pet.Education.Courses.Infrastructure.Interfaces.Model
 {
     public interface ICourseLayer : IDataCRUD<Course>
     {
-        
+        Task<List<Course>> Get(int limit);
     }
 }

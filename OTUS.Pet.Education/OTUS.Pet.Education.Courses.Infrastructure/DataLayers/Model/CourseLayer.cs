@@ -122,5 +122,10 @@ namespace OTUS.Pet.Education.Courses.Infrastructure.DataLayers.Model
 
             return course;
         }
+
+        public async Task<List<Course>> Get(int limit)
+        {
+            return _dbContext.Courses.Take(limit).Include(s => s.Subject).Include(s => s.Students).ToList();
+        }
     }
 }
