@@ -1,15 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using OTUS.Pet.Education.Courses.Domain.Interfaces.Repository;
 using OTUS.Pet.Education.Courses.Infrastructure.Entities;
 using OTUS.Pet.Education.Courses.Infrastructure.Interfaces;
-using OTUS.Pet.Education.Courses.Infrastructure.Interfaces.Model;
 
 namespace OTUS.Pet.Education.Courses.Infrastructure.DataLayers.Model
 {
-    public class CourseLayer : ICourseLayer
+    public class CourseLayer : ICourseRepository, IDataCRUD<Course>
     {
         private readonly IDBContext _dbContext;
         public CourseLayer(IDBContext dbContext)
@@ -123,9 +124,32 @@ namespace OTUS.Pet.Education.Courses.Infrastructure.DataLayers.Model
             return course;
         }
 
+        /// <inheritdoc/>
         public async Task<List<Course>> Get(int limit)
         {
             return _dbContext.Courses.Take(limit).Include(s => s.Subject).Include(s => s.Students).ToList();
+        }
+
+        /// <inheritdoc/>
+        public async Task<Domain.Models.Course?> GetById(Guid id)
+        {
+            var course = await GetSingle(id);
+            if (course is null)
+                return null;
+            return (Domain.Models.Course)course;
+        }
+
+        /// <inheritdoc/>
+        public async Task AddStudent(Domain.Models.Course course, Domain.Models.User student)
+        {
+            var dbCourse = await _dbContext.Courses.FirstOrDefaultAsync((c) => c.Id == course.Id);
+            var dbStudent = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == student.Id);
+            if(dbCourse is null)
+                return;
+            if(dbStudent is null)
+                return;
+            dbCourse.Students.Add(dbStudent);
+            await _dbContext._context.SaveChangesAsync();
         }
     }
 }

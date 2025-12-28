@@ -36,16 +36,36 @@ public class Lesson : IEntity, IEntityUpdater<Lesson>
     /// <inheritdoc/>
     public void Update(Lesson arg)
     {
-        if(Name != arg.Name)
+        if (Name != arg.Name)
             Name = arg.Name;
 
-        if(Description != arg.Description)
+        if (Description != arg.Description)
             Description = arg.Description;
 
-        if(StartDate != arg.StartDate)
+        if (StartDate != arg.StartDate)
             StartDate = arg.StartDate;
 
-        if(EndDate != arg.EndDate)
+        if (EndDate != arg.EndDate)
             EndDate = arg.EndDate;
     }
+
+    public static explicit operator Lesson(Domain.Models.Lesson lesson) =>
+    new Lesson
+    {
+        Id = lesson.Id,
+        Name = lesson.Name,
+        Description = lesson.Description,
+        StartDate = lesson.StartDate,
+        EndDate = lesson.EndDate
+    };
+
+    public static explicit operator Domain.Models.Lesson(Lesson lesson) =>
+    new Domain.Models.Lesson
+    {
+        Id = lesson.Id,
+        Name = lesson.Name,
+        Description = lesson.Description,
+        StartDate = lesson.StartDate,
+        EndDate = lesson.EndDate
+    };
 }

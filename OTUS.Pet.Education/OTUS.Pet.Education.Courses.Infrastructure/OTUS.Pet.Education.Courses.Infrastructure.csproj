@@ -10,8 +10,8 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
   </ItemGroup>
 
-  <!-- <ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\OTUS.Pet.Education.Courses.Domain\OTUS.Pet.Education.Courses.Domain.csproj" />
-  </ItemGroup> -->
+  </ItemGroup>
 
 </Project>

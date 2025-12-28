@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using OTUS.Pet.Education.Courses.Domain.Interfaces.Repository;
 using OTUS.Pet.Education.Courses.Infrastructure.Entities;
 using OTUS.Pet.Education.Courses.Infrastructure.Interfaces;
-using OTUS.Pet.Education.Courses.Infrastructure.Interfaces.Model;
 
 namespace OTUS.Pet.Education.Courses.Infrastructure.DataLayers.Model
 {
-    public class RoleLayer : IRoleLayer
+    public class RoleLayer : IRoleRepository, IDataCRUD<Role>
     {
         private readonly IDBContext _dbContext;
         public RoleLayer(IDBContext dbContext)
@@ -117,6 +117,12 @@ namespace OTUS.Pet.Education.Courses.Infrastructure.DataLayers.Model
                 return null;
 
             return role;
+        }
+
+        /// <inheritdoc/>
+        public async Task<List<Role>> Get(int limit)
+        {
+            return _dbContext.Roles.Take(limit).ToList();
         }
     }
 }

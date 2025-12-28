@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using OTUS.Pet.Education.Courses.Domain.Interfaces.Repository;
 using OTUS.Pet.Education.Courses.Infrastructure.Entities;
 using OTUS.Pet.Education.Courses.Infrastructure.Interfaces;
-using OTUS.Pet.Education.Courses.Infrastructure.Interfaces.Model;
 
 namespace OTUS.Pet.Education.Courses.Infrastructure.DataLayers.Model
 {
-    public class SubjectLayer : ISubjectLayer, IDisposable
+    public class SubjectLayer : ISubjectRepository, IDataCRUD<Subject>, IDisposable
     {
         private readonly IDBContext _dbContext;
         public SubjectLayer(IDBContext dbContext)
@@ -149,14 +149,25 @@ namespace OTUS.Pet.Education.Courses.Infrastructure.DataLayers.Model
             return subject;
         }
 
+        /// <inheritdoc/>
         public async Task<List<Subject>> Get(int limit)
         {
             return _dbContext.Subjects.Take(limit).ToList();
         }
 
-        public async Task<Subject?> GetByName(string name)
+        /// <inheritdoc/>
+        public async Task<Courses.Domain.Models.Subject?> GetByName(string name)
         {
-            return _dbContext.Subjects.AsNoTracking().FirstOrDefault(c => c.Name.ToLower() == name.ToLower());
+            var subject = _dbContext.Subjects.AsNoTracking().FirstOrDefault(c => c.Name.ToLower() == name.ToLower());
+            if (subject is null)
+                return null;
+            return (Courses.Domain.Models.Subject)subject;
+        }
+
+        /// <inheritdoc/>
+        public async Task Add(Domain.Models.Subject subject)
+        {
+            await AddSingle((Subject)subject);
         }
     }
 }

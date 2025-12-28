@@ -3,22 +3,26 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace OTUS.Pet.Education.Courses.Domain.Interfaces
+namespace OTUS.Pet.Education.Courses.Domain.Models
 {
     /// <summary>
     /// Урок
     /// </summary>
-    public interface ILesson
+    public class Lesson
     {
+        /// <summary>
+        /// Идентификатор
+        /// </summary>
+        public Guid Id { get; set; }
         /// <summary>
         /// Наименование
         /// </summary>
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         /// <summary>
         /// Описание урока
         /// </summary>
-        public string Description { get; set; }
+        public string Description { get; set; } = string.Empty;
 
         /// <summary>
         /// Дата и время начала урока

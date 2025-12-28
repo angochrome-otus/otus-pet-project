@@ -32,7 +32,12 @@ namespace OTUS.Pet.Education.Courses.Infrastructure.Interfaces
         /// <param name="ids"></param>
         /// <returns></returns>
         Task<Dictionary<Guid, T?>> GetMany(List<Guid> ids);
-
+        /// <summary>
+        /// Получение записей
+        /// </summary>
+        /// <param name="limit"></param>
+        /// <returns></returns>
+        Task<List<T>> Get(int limit);
         /// <summary>
         /// Изменение одной записи
         /// </summary>

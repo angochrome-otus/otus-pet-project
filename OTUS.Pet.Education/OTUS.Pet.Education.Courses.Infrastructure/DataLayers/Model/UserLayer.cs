@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using OTUS.Pet.Education.Courses.Domain.Interfaces.Repository;
 using OTUS.Pet.Education.Courses.Infrastructure.Entities;
 using OTUS.Pet.Education.Courses.Infrastructure.Interfaces;
-using OTUS.Pet.Education.Courses.Infrastructure.Interfaces.Model;
 
 namespace OTUS.Pet.Education.Courses.Infrastructure.DataLayers.Model
 {
-    public class UserLayer : IUserLayer
+    public class UserLayer : IUserRepository, IDataCRUD<User>
     {
         private readonly IDBContext _dbContext;
         public UserLayer(IDBContext dbContext)
@@ -144,10 +144,19 @@ namespace OTUS.Pet.Education.Courses.Infrastructure.DataLayers.Model
         }
 
         /// <inheritdoc/>
-        public async Task<User?> GetByFMLName(User user)
+        public async Task<List<User>> Get(int limit)
+        {
+            return _dbContext.Users.Take(limit).ToList();
+        }
+
+        /// <inheritdoc/>
+        public async Task<Domain.Models.User?> GetByFMLName(Domain.Models.User user)
         {
             var users = _dbContext.Users.Where(c => c.FirstName.ToLower() == user.FirstName.ToLower() && c.MiddleName.ToLower() == user.MiddleName.ToLower() && c.LastName == user.LastName.ToLower());
-            return users.FirstOrDefault();
+            var firstUser = users.FirstOrDefault();
+            if(firstUser is null)
+                return null;
+            return (Courses.Domain.Models.User)firstUser;
         }
     }
 }

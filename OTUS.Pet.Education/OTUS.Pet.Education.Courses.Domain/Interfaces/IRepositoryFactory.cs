@@ -5,11 +5,8 @@ using System.Threading.Tasks;
 
 namespace OTUS.Pet.Education.Courses.Domain.Interfaces
 {
-    /// <summary>
-    /// Описание курса
-    /// </summary>
-    public interface ISubject
+    public interface IRepositoryFactory
     {
-        public string Name { get; set; }
+        TRepository CreateRepository<TRepository>() where TRepository : notnull, IRepository;
     }
 }

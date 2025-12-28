@@ -3,31 +3,35 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace OTUS.Pet.Education.Courses.Domain.Interfaces
+namespace OTUS.Pet.Education.Courses.Domain.Models
 {
     /// <summary>
     /// Пользователь
     /// </summary>
-    public interface IUser
+    public class User
     {
+        /// <summary>
+        /// Идентификатор
+        /// </summary>
+        public Guid Id { get; set; }
         /// <summary>
         /// Имя
         /// </summary>
-        string FirstName { get; set; }
+        public string FirstName { get; set; } = string.Empty;
 
         /// <summary>
         /// Фамилия
         /// </summary>
-        string LastName { get; set; }
+        public string LastName { get; set; } = string.Empty;
 
         /// <summary>
         /// Отчество
         /// </summary>
-        string MiddleName { get; set; }
+        public string MiddleName { get; set; } = string.Empty;
 
         /// <summary>
         /// Роли пользователя
         /// </summary>
-        List<IRole> Roles { get; set; }
+        public List<Role> Roles { get; set; } = new List<Role>();
     }
 }

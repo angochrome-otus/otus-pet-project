@@ -48,4 +48,24 @@ public class User : IEntity, IEntityUpdater<User>
         Roles.Clear();
         Roles.AddRange(arg.Roles);
     }
+
+    public static explicit operator User(Domain.Models.User user) =>
+    new User
+    {
+        Id = user.Id,
+        FirstName = user.FirstName,
+        MiddleName = user.MiddleName,
+        LastName = user.LastName,
+        Roles = user.Roles.Select(x => (Role)x).ToList()
+    };
+
+    public static explicit operator Domain.Models.User(User user) =>
+    new Domain.Models.User
+    {
+        Id = user.Id,
+        FirstName = user.FirstName,
+        MiddleName = user.MiddleName,
+        LastName = user.LastName,
+        Roles = user.Roles.Select(x => (Domain.Models.Role)x).ToList()
+    };
 }

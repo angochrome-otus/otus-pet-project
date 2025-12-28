@@ -4,10 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
+using OTUS.Pet.Education.Courses.Domain.Interfaces;
+using OTUS.Pet.Education.Courses.Domain.Interfaces.Repository;
 using OTUS.Pet.Education.Courses.Infrastructure.DataLayers;
 using OTUS.Pet.Education.Courses.Infrastructure.DataLayers.Model;
 using OTUS.Pet.Education.Courses.Infrastructure.Interfaces;
-using OTUS.Pet.Education.Courses.Infrastructure.Interfaces.Model;
+using OTUS.Pet.Education.Courses.Infrastructure.Services;
 
 namespace OTUS.Pet.Education.Courses.Infrastructure.Common
 {
@@ -25,7 +27,6 @@ namespace OTUS.Pet.Education.Courses.Infrastructure.Common
             {
                 throw new NullReferenceException("CONNECTION_STRING_ENVIRONMENT is null!");
             }
-            // connectionString = "Host=localhost;Port=5432;Database=usersdb;Username=postgres;Password=пароль_от_postgres";
             var config = new ConnectionConfig(connectionString);
             try
             {
@@ -43,14 +44,13 @@ namespace OTUS.Pet.Education.Courses.Infrastructure.Common
             }
             services.AddSingleton(config);
             services.AddTransient<IDBContext, NpgsqlDBContext>();
+            services.AddSingleton<IRepositoryFactory, RepositoryFactory>();
 
-            services.AddTransient<ICourseLayer, CourseLayer>();
-            services.AddTransient<ILessonLayer, LessonLayer>();
-            services.AddTransient<IRoleLayer, RoleLayer>();
-            services.AddTransient<ISubjectLayer, SubjectLayer>();
-            services.AddTransient<IUserLayer, UserLayer>();
-
-            services.AddTransient<IDataLayer, DataLayer>();
+            services.AddTransient<ICourseRepository, CourseLayer>();
+            services.AddTransient<ILessonRepository, LessonLayer>();
+            services.AddTransient<IRoleRepository, RoleLayer>();
+            services.AddTransient<ISubjectRepository, SubjectLayer>();
+            services.AddTransient<IUserRepository, UserLayer>();
         }
     }
 }

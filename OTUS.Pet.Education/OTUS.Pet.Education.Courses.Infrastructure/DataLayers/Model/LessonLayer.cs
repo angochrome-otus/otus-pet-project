@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using OTUS.Pet.Education.Courses.Domain.Interfaces.Repository;
 using OTUS.Pet.Education.Courses.Infrastructure.Entities;
 using OTUS.Pet.Education.Courses.Infrastructure.Interfaces;
-using OTUS.Pet.Education.Courses.Infrastructure.Interfaces.Model;
 
 namespace OTUS.Pet.Education.Courses.Infrastructure.DataLayers.Model
 {
-    public class LessonLayer : ILessonLayer
+    public class LessonLayer : ILessonRepository, IDataCRUD<Lesson>
     {
         private readonly IDBContext _dbContext;
         public LessonLayer(IDBContext dbContext)
@@ -117,6 +117,31 @@ namespace OTUS.Pet.Education.Courses.Infrastructure.DataLayers.Model
                 return null;
 
             return lesson;
+        }
+
+        /// <inheritdoc/>
+        public async Task<List<Lesson>> Get(int limit)
+        {
+            return _dbContext.Lessons.Take(limit).ToList();
+        }
+
+        /// <inheritdoc/>
+        public async Task<Dictionary<DateOnly, List<Domain.Models.Lesson>>> GetLessonsByPeriod(DateOnly dateFrom, DateOnly dateTo)
+        {
+            var lessons = _dbContext.Lessons.AsNoTracking().Where(l => DateOnly.FromDateTime(l.StartDate) >= dateFrom && DateOnly.FromDateTime(l.StartDate) <= dateTo).ToList();
+            if (!lessons.Any())
+                return new Dictionary<DateOnly, List<Domain.Models.Lesson>>();
+
+            var result = new Dictionary<DateOnly, List<Domain.Models.Lesson>>();
+            foreach (var lesson in lessons)
+            {
+                var date = DateOnly.FromDateTime(lesson.StartDate);
+                if (!result.TryGetValue(date, out var lessonList))
+                    result.Add(date, lessonList = new List<Domain.Models.Lesson>());
+
+                lessonList.Add((Domain.Models.Lesson)lesson);
+            }
+            return result;
         }
     }
 }

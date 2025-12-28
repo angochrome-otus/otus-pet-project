@@ -12,11 +12,16 @@ namespace OTUS.Pet.Education.Courses.Infrastructure.Entities;
 /// </summary>
 public class Subject : IEntity, IEntityUpdater<Subject>
 {
+    /// <summary>
+    /// Идентификатор
+    /// </summary>
     public Guid Id { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public DateTime? DeletedAt { get; set; }
-    /// <inheritdoc/>
+    /// <summary>
+    /// Тематики
+    /// </summary>
     public string Name { get; set; } = string.Empty;
 
     /// <inheritdoc/>
@@ -25,4 +30,18 @@ public class Subject : IEntity, IEntityUpdater<Subject>
         if (Name != arg.Name)
             Name = arg.Name;
     }
+
+    public static explicit operator Subject(Domain.Models.Subject subject) =>
+    new Subject
+    {
+        Id = subject.Id,
+        Name = subject.Name,
+    };
+
+    public static explicit operator Domain.Models.Subject(Subject subject) =>
+    new Domain.Models.Subject
+    {
+        Id = subject.Id,
+        Name = subject.Name,
+    };
 }
