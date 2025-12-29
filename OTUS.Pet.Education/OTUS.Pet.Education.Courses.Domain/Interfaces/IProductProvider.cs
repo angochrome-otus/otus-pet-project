@@ -13,12 +13,12 @@ namespace OTUS.Pet.Education.Courses.Domain.Interfaces
         /// </summary>
         /// <param name="id"></param>
         /// <param name="user"></param>
-        void SubscribeCourse(Guid id, User user);
+        Task SubscribeCourse(Guid id, User user);
         /// <summary>
         /// Открыть урок для пользователя
         /// </summary>
         /// <param name="id"></param>
         /// <param name="user"></param>
-        void ProvideLesson(Guid id, User user);
+        Task ProvideLesson(Guid id, User user);
     }
 }
