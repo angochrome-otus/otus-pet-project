@@ -144,12 +144,28 @@ namespace OTUS.Pet.Education.Courses.Infrastructure.DataLayers.Model
         {
             var dbCourse = await _dbContext.Courses.FirstOrDefaultAsync((c) => c.Id == course.Id);
             var dbStudent = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == student.Id);
-            if(dbCourse is null)
+            if (dbCourse is null)
                 return;
-            if(dbStudent is null)
+            if (dbStudent is null)
                 return;
             dbCourse.Students.Add(dbStudent);
             await _dbContext._context.SaveChangesAsync();
+        }
+
+        /// <inheritdoc/>
+        public async Task Add(Domain.Models.Course course)
+        {
+            await AddSingle((Course)course);
+        }
+
+        /// <inheritdoc/>
+        async Task<List<Domain.Models.Course>> ICourseRepository.GetLimit(int limit)
+        {
+            var courses = await Get(limit);
+            if (courses.Any())
+                return new List<Domain.Models.Course>();
+
+            return courses.Select(c => (Domain.Models.Course)c).ToList();
         }
     }
 }

@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using OTUS.Pet.Education.Courses.Infrastructure.Interfaces.Model;
+using OTUS.Pet.Education.Courses.Domain.Interfaces.Repository;
+using OTUS.Pet.Education.Courses.Infrastructure.Services;
 using OTUS.Pet.Education.Courses.WebApi.Models;
 
 namespace OTUS.Pet.Education.Courses.WebApi.Controllers
@@ -13,46 +14,31 @@ namespace OTUS.Pet.Education.Courses.WebApi.Controllers
     public class UserController : ControllerBase
     {
         private readonly ILogger<UserController> _logger;
-        private IUserLayer _userLayer;
-
-        public UserController(ILogger<UserController> logger, IUserLayer userLayer)
+        private RepositoryFactory _repositoryFactory;
+        public UserController(ILogger<UserController> logger, RepositoryFactory repositoryFactory)
         {
             _logger = logger;
-            _userLayer = userLayer;
+            _repositoryFactory = repositoryFactory;
         }
 
         [HttpPost]
         [Route("AddUser")]
         public async Task AddUser(User user)
         {
-            await _userLayer.AddSingle(new Infrastructure.Entities.User
-            {
-                FirstName = user.FirstName,
-                MiddleName = user.MiddleName,
-                LastName = user.LastName,
-                Roles = user.Roles is null ? new List<Infrastructure.Entities.Role>() : user.Roles.Select(e => new Infrastructure.Entities.Role { Name = e.Name, Description = e.Description }).ToList()
-            });
+            var userRepository = _repositoryFactory.CreateRepository<IUserRepository>();
+            await userRepository.Add((Domain.Models.User)user);
         }
 
         [HttpPost]
         [Route("GetUsersByFirstMiddleLastName")]
         public async Task<User?> GetUsersByFMLName(User user)
         {
-            var resultUser = await _userLayer.GetByFMLName(new Infrastructure.Entities.User
-            {
-                FirstName = user.FirstName,
-                MiddleName = user.MiddleName,
-                LastName = user.LastName,
-            });
-            if(resultUser is null)
+            var userRepository = _repositoryFactory.CreateRepository<IUserRepository>();
+            var resultUser = await userRepository.GetByFMLName((Domain.Models.User)user);
+            if (resultUser is null)
                 return null;
 
-            return new User
-            {
-                FirstName = resultUser.FirstName,
-                MiddleName = resultUser.MiddleName,
-                LastName = resultUser.LastName,
-            };
+            return (User)resultUser;
         }
     }
 }

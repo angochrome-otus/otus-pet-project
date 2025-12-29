@@ -154,9 +154,15 @@ namespace OTUS.Pet.Education.Courses.Infrastructure.DataLayers.Model
         {
             var users = _dbContext.Users.Where(c => c.FirstName.ToLower() == user.FirstName.ToLower() && c.MiddleName.ToLower() == user.MiddleName.ToLower() && c.LastName == user.LastName.ToLower());
             var firstUser = users.FirstOrDefault();
-            if(firstUser is null)
+            if (firstUser is null)
                 return null;
             return (Courses.Domain.Models.User)firstUser;
+        }
+        
+        /// <inheritdoc/>
+        public async Task Add(Domain.Models.User user)
+        {
+            await AddSingle((User)user);
         }
     }
 }

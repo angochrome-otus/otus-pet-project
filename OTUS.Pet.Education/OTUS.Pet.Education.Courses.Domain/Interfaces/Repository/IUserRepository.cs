@@ -13,5 +13,11 @@ namespace OTUS.Pet.Education.Courses.Domain.Interfaces.Repository
         /// </summary>
         /// <returns></returns>
         Task<User?> GetByFMLName(User user);
+        /// <summary>
+        /// Добавить
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
+        Task Add(User user);
     }
 }

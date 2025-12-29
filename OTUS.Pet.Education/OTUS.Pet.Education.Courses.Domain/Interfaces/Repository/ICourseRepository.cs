@@ -9,6 +9,16 @@ namespace OTUS.Pet.Education.Courses.Domain.Interfaces.Repository
     public interface ICourseRepository : IRepository
     {
         /// <summary>
+        /// Добавить
+        /// </summary>
+        /// <returns></returns>
+        Task Add(Course course);
+        /// <summary>
+        /// Получить количество
+        /// </summary>
+        /// <returns></returns>
+        Task<List<Course>> GetLimit(int limit);
+        /// <summary>
         /// Получить Id
         /// </summary>
         /// <returns></returns>

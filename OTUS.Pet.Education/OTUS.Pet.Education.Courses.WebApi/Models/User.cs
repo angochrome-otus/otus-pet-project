@@ -26,5 +26,23 @@ namespace OTUS.Pet.Education.Courses.WebApi.Models
         /// Роли пользователя
         /// </summary>
         public List<Role> Roles { get; set; } = new List<Role>();
+
+        public static explicit operator User(Domain.Models.User user) =>
+        new User
+        {
+            FirstName = user.FirstName,
+            MiddleName = user.MiddleName,
+            LastName = user.LastName,
+            Roles = user.Roles.Select(x => (Role)x).ToList()
+        };
+
+        public static explicit operator Domain.Models.User(User user) =>
+        new Domain.Models.User
+        {
+            FirstName = user.FirstName,
+            MiddleName = user.MiddleName,
+            LastName = user.LastName,
+            Roles = user.Roles.Select(x => (Domain.Models.Role)x).ToList()
+        };
     }
 }

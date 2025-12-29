@@ -16,5 +16,19 @@ namespace OTUS.Pet.Education.Courses.WebApi.Models
         /// Описание роли
         /// </summary>
         public string Description { get; set; } = string.Empty;
+
+        public static explicit operator Role(Domain.Models.Role role) =>
+        new Role
+        {
+            Name = role.Name,
+            Description = role.Description
+        };
+
+        public static explicit operator Domain.Models.Role(Role role) =>
+        new Domain.Models.Role
+        {
+            Name = role.Name,
+            Description = role.Description
+        };
     }
 }
