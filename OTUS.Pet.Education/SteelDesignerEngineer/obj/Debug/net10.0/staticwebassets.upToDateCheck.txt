@@ -1,0 +1,6 @@
+C:\Users\find\Desktop\Qdrant\steel-designer-engineer_v2\SteelDesignerEngineer\wwwroot\login.html
+C:\Users\find\Desktop\Qdrant\steel-designer-engineer_v2\SteelDesignerEngineer\wwwroot\index.html
+C:\Users\find\Desktop\Qdrant\steel-designer-engineer_v2\SteelDesignerEngineer\wwwroot\profile.html
+wwwroot\index.html
+wwwroot\login.html
+wwwroot\profile.html

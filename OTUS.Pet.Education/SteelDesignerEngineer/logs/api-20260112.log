@@ -1,0 +1,91 @@
+2026-01-12 08:25:28.355 +03:00 [INF] SteelDesignerEngineer API starting...
+2026-01-12 08:25:28.405 +03:00 [INF] Listening on: https://localhost:65030/, http://localhost:65031
+2026-01-12 08:25:28.408 +03:00 [INF] Swagger UI доступен на: https://localhost:65030/swagger и http://localhost:65031/swagger
+2026-01-12 08:25:29.340 +03:00 [INF] PageContentRepository initialized. Database: SteelDesignerEngineerDB, Collection: PageContent
+2026-01-12 08:25:30.389 +03:00 [INF] Upserted PageContent: home (Id: "7ed44169-c004-43f7-9d3d-1a55f093c327")
+2026-01-12 08:25:30.392 +03:00 [INF] PageContent created: home (Id: "7ed44169-c004-43f7-9d3d-1a55f093c327")
+2026-01-12 08:25:30.463 +03:00 [INF] Cached default page in Redis: page:home
+2026-01-12 08:25:30.522 +03:00 [INF] Published page_content_created for page: home
+2026-01-12 08:25:30.523 +03:00 [INF] Main site: http://localhost:65031 (or https://localhost:65030)
+2026-01-12 08:25:30.524 +03:00 [INF] Default page URL: http://localhost:65031/ (serves static index) or API: https://localhost:65030/api/PageContent/by-name/home
+2026-01-12 08:25:30.537 +03:00 [INF] MessageHandlerHostedService запускается...
+2026-01-12 08:25:30.538 +03:00 [INF] Все обработчики сообщений успешно запущены и подписаны
+2026-01-12 08:27:21.954 +03:00 [INF] PageContentRepository initialized. Database: SteelDesignerEngineerDB, Collection: PageContent
+2026-01-12 11:15:47.779 +03:00 [INF] SteelDesignerEngineer API starting...
+2026-01-12 11:15:47.832 +03:00 [INF] Listening on: https://localhost:65030/, http://localhost:65031
+2026-01-12 11:15:47.836 +03:00 [INF] Swagger UI доступен на: https://localhost:65030/swagger и http://localhost:65031/swagger
+2026-01-12 11:15:48.609 +03:00 [INF] PageContentRepository initialized. Database: SteelDesignerEngineerDB, Collection: PageContent
+2026-01-12 11:15:49.788 +03:00 [ERR] Failed to insert/upsert PageContent: home
+MongoDB.Driver.MongoWriteException: A write operation resulted in an error. WriteError: { Category : "Uncategorized", Code : 66, Message : "After applying the update, the (immutable) field '_id' was found to have been altered to _id: BinData(3, 552603984EB83C4E97D8DE731F68A146)" }.
+ ---> MongoDB.Driver.MongoBulkWriteException`1[SteelDesignerEngineer.Domain.Entities.PageContent]: A bulk write operation resulted in one or more errors. WriteErrors: [ { Category : "Uncategorized", Code : 66, Message : "After applying the update, the (immutable) field '_id' was found to have been altered to _id: BinData(3, 552603984EB83C4E97D8DE731F68A146)" } ].
+   at MongoDB.Driver.MongoCollectionImpl`1.BulkWriteAsync(IClientSessionHandle session, IEnumerable`1 requests, BulkWriteOptions options, CancellationToken cancellationToken)
+   at MongoDB.Driver.MongoCollectionImpl`1.UsingImplicitSessionAsync[TResult](Func`2 funcAsync, CancellationToken cancellationToken)
+   at MongoDB.Driver.MongoCollectionBase`1.ReplaceOneAsync(FilterDefinition`1 filter, TDocument replacement, ReplaceOptions options, Func`3 bulkWriteAsync)
+   --- End of inner exception stack trace ---
+   at MongoDB.Driver.MongoCollectionBase`1.ReplaceOneAsync(FilterDefinition`1 filter, TDocument replacement, ReplaceOptions options, Func`3 bulkWriteAsync)
+   at SteelDesignerEngineer.Data.MongoDB.PageContentRepository.CreateAsync(PageContent pageContent) in C:\Users\n.shchegolev\Desktop\steel-designer-engineer_v2\SteelDesignerEngineer.Data\MongoDB\PageContentRepository.cs:line 59
+2026-01-12 11:15:49.877 +03:00 [ERR] Error while creating PageContent: home
+MongoDB.Driver.MongoWriteException: A write operation resulted in an error. WriteError: { Category : "Uncategorized", Code : 66, Message : "After applying the update, the (immutable) field '_id' was found to have been altered to _id: BinData(3, 552603984EB83C4E97D8DE731F68A146)" }.
+ ---> MongoDB.Driver.MongoBulkWriteException`1[SteelDesignerEngineer.Domain.Entities.PageContent]: A bulk write operation resulted in one or more errors. WriteErrors: [ { Category : "Uncategorized", Code : 66, Message : "After applying the update, the (immutable) field '_id' was found to have been altered to _id: BinData(3, 552603984EB83C4E97D8DE731F68A146)" } ].
+   at MongoDB.Driver.MongoCollectionImpl`1.BulkWriteAsync(IClientSessionHandle session, IEnumerable`1 requests, BulkWriteOptions options, CancellationToken cancellationToken)
+   at MongoDB.Driver.MongoCollectionImpl`1.UsingImplicitSessionAsync[TResult](Func`2 funcAsync, CancellationToken cancellationToken)
+   at MongoDB.Driver.MongoCollectionBase`1.ReplaceOneAsync(FilterDefinition`1 filter, TDocument replacement, ReplaceOptions options, Func`3 bulkWriteAsync)
+   --- End of inner exception stack trace ---
+   at MongoDB.Driver.MongoCollectionBase`1.ReplaceOneAsync(FilterDefinition`1 filter, TDocument replacement, ReplaceOptions options, Func`3 bulkWriteAsync)
+   at SteelDesignerEngineer.Data.MongoDB.PageContentRepository.CreateAsync(PageContent pageContent) in C:\Users\n.shchegolev\Desktop\steel-designer-engineer_v2\SteelDesignerEngineer.Data\MongoDB\PageContentRepository.cs:line 59
+   at SteelDesignerEngineer.Infrastructure.Services.PageContentService.CreatePageContentAsync(PageContent pageContent) in C:\Users\n.shchegolev\Desktop\steel-designer-engineer_v2\SteelDesignerEngineer.Infrastructure\Services\PageContentService.cs:line 72
+2026-01-12 11:15:50.081 +03:00 [ERR] Error seeding default page on startup
+MongoDB.Driver.MongoWriteException: A write operation resulted in an error. WriteError: { Category : "Uncategorized", Code : 66, Message : "After applying the update, the (immutable) field '_id' was found to have been altered to _id: BinData(3, 552603984EB83C4E97D8DE731F68A146)" }.
+ ---> MongoDB.Driver.MongoBulkWriteException`1[SteelDesignerEngineer.Domain.Entities.PageContent]: A bulk write operation resulted in one or more errors. WriteErrors: [ { Category : "Uncategorized", Code : 66, Message : "After applying the update, the (immutable) field '_id' was found to have been altered to _id: BinData(3, 552603984EB83C4E97D8DE731F68A146)" } ].
+   at MongoDB.Driver.MongoCollectionImpl`1.BulkWriteAsync(IClientSessionHandle session, IEnumerable`1 requests, BulkWriteOptions options, CancellationToken cancellationToken)
+   at MongoDB.Driver.MongoCollectionImpl`1.UsingImplicitSessionAsync[TResult](Func`2 funcAsync, CancellationToken cancellationToken)
+   at MongoDB.Driver.MongoCollectionBase`1.ReplaceOneAsync(FilterDefinition`1 filter, TDocument replacement, ReplaceOptions options, Func`3 bulkWriteAsync)
+   --- End of inner exception stack trace ---
+   at MongoDB.Driver.MongoCollectionBase`1.ReplaceOneAsync(FilterDefinition`1 filter, TDocument replacement, ReplaceOptions options, Func`3 bulkWriteAsync)
+   at SteelDesignerEngineer.Data.MongoDB.PageContentRepository.CreateAsync(PageContent pageContent) in C:\Users\n.shchegolev\Desktop\steel-designer-engineer_v2\SteelDesignerEngineer.Data\MongoDB\PageContentRepository.cs:line 59
+   at SteelDesignerEngineer.Infrastructure.Services.PageContentService.CreatePageContentAsync(PageContent pageContent) in C:\Users\n.shchegolev\Desktop\steel-designer-engineer_v2\SteelDesignerEngineer.Infrastructure\Services\PageContentService.cs:line 72
+   at SteelDesignerEngineer.Application.Services.PageContentApplicationService.CreatePageContentAsync(PageContent pageContent) in C:\Users\n.shchegolev\Desktop\steel-designer-engineer_v2\SteelDesignerEngineer.Application\Services\PageContentApplicationService.cs:line 64
+   at Program.Main(String[] args) in C:\Users\n.shchegolev\Desktop\steel-designer-engineer_v2\SteelDesignerEngineer\Program.cs:line 118
+2026-01-12 11:15:50.112 +03:00 [INF] Main site: http://localhost:65031 (or https://localhost:65030)
+2026-01-12 11:15:50.114 +03:00 [INF] Default page URL: http://localhost:65031/ (serves static index) or API: https://localhost:65030/api/PageContent/by-name/home
+2026-01-12 11:15:50.132 +03:00 [INF] MessageHandlerHostedService запускается...
+2026-01-12 11:15:50.134 +03:00 [INF] Все обработчики сообщений успешно запущены и подписаны
+2026-01-12 13:12:17.372 +03:00 [INF] SteelDesignerEngineer API starting...
+2026-01-12 13:12:17.429 +03:00 [INF] Listening on: https://localhost:65030/, http://localhost:65031
+2026-01-12 13:12:17.434 +03:00 [INF] Swagger UI доступен на: https://localhost:65030/swagger и http://localhost:65031/swagger
+2026-01-12 13:12:18.283 +03:00 [INF] PageContentRepository initialized. Database: SteelDesignerEngineerDB, Collection: PageContent
+2026-01-12 13:12:19.487 +03:00 [ERR] Failed to insert/upsert PageContent: home
+MongoDB.Driver.MongoWriteException: A write operation resulted in an error. WriteError: { Category : "Uncategorized", Code : 66, Message : "After applying the update, the (immutable) field '_id' was found to have been altered to _id: BinData(3, F767860AB23C724B9A4DFE07BC9D9E32)" }.
+ ---> MongoDB.Driver.MongoBulkWriteException`1[SteelDesignerEngineer.Domain.Entities.PageContent]: A bulk write operation resulted in one or more errors. WriteErrors: [ { Category : "Uncategorized", Code : 66, Message : "After applying the update, the (immutable) field '_id' was found to have been altered to _id: BinData(3, F767860AB23C724B9A4DFE07BC9D9E32)" } ].
+   at MongoDB.Driver.MongoCollectionImpl`1.BulkWriteAsync(IClientSessionHandle session, IEnumerable`1 requests, BulkWriteOptions options, CancellationToken cancellationToken)
+   at MongoDB.Driver.MongoCollectionImpl`1.UsingImplicitSessionAsync[TResult](Func`2 funcAsync, CancellationToken cancellationToken)
+   at MongoDB.Driver.MongoCollectionBase`1.ReplaceOneAsync(FilterDefinition`1 filter, TDocument replacement, ReplaceOptions options, Func`3 bulkWriteAsync)
+   --- End of inner exception stack trace ---
+   at MongoDB.Driver.MongoCollectionBase`1.ReplaceOneAsync(FilterDefinition`1 filter, TDocument replacement, ReplaceOptions options, Func`3 bulkWriteAsync)
+   at SteelDesignerEngineer.Data.MongoDB.PageContentRepository.CreateAsync(PageContent pageContent) in C:\Users\n.shchegolev\Desktop\steel-designer-engineer_v2\SteelDesignerEngineer.Data\MongoDB\PageContentRepository.cs:line 59
+2026-01-12 13:12:19.564 +03:00 [ERR] Error while creating PageContent: home
+MongoDB.Driver.MongoWriteException: A write operation resulted in an error. WriteError: { Category : "Uncategorized", Code : 66, Message : "After applying the update, the (immutable) field '_id' was found to have been altered to _id: BinData(3, F767860AB23C724B9A4DFE07BC9D9E32)" }.
+ ---> MongoDB.Driver.MongoBulkWriteException`1[SteelDesignerEngineer.Domain.Entities.PageContent]: A bulk write operation resulted in one or more errors. WriteErrors: [ { Category : "Uncategorized", Code : 66, Message : "After applying the update, the (immutable) field '_id' was found to have been altered to _id: BinData(3, F767860AB23C724B9A4DFE07BC9D9E32)" } ].
+   at MongoDB.Driver.MongoCollectionImpl`1.BulkWriteAsync(IClientSessionHandle session, IEnumerable`1 requests, BulkWriteOptions options, CancellationToken cancellationToken)
+   at MongoDB.Driver.MongoCollectionImpl`1.UsingImplicitSessionAsync[TResult](Func`2 funcAsync, CancellationToken cancellationToken)
+   at MongoDB.Driver.MongoCollectionBase`1.ReplaceOneAsync(FilterDefinition`1 filter, TDocument replacement, ReplaceOptions options, Func`3 bulkWriteAsync)
+   --- End of inner exception stack trace ---
+   at MongoDB.Driver.MongoCollectionBase`1.ReplaceOneAsync(FilterDefinition`1 filter, TDocument replacement, ReplaceOptions options, Func`3 bulkWriteAsync)
+   at SteelDesignerEngineer.Data.MongoDB.PageContentRepository.CreateAsync(PageContent pageContent) in C:\Users\n.shchegolev\Desktop\steel-designer-engineer_v2\SteelDesignerEngineer.Data\MongoDB\PageContentRepository.cs:line 59
+   at SteelDesignerEngineer.Infrastructure.Services.PageContentService.CreatePageContentAsync(PageContent pageContent) in C:\Users\n.shchegolev\Desktop\steel-designer-engineer_v2\SteelDesignerEngineer.Infrastructure\Services\PageContentService.cs:line 72
+2026-01-12 13:12:19.651 +03:00 [ERR] Error seeding default page on startup
+MongoDB.Driver.MongoWriteException: A write operation resulted in an error. WriteError: { Category : "Uncategorized", Code : 66, Message : "After applying the update, the (immutable) field '_id' was found to have been altered to _id: BinData(3, F767860AB23C724B9A4DFE07BC9D9E32)" }.
+ ---> MongoDB.Driver.MongoBulkWriteException`1[SteelDesignerEngineer.Domain.Entities.PageContent]: A bulk write operation resulted in one or more errors. WriteErrors: [ { Category : "Uncategorized", Code : 66, Message : "After applying the update, the (immutable) field '_id' was found to have been altered to _id: BinData(3, F767860AB23C724B9A4DFE07BC9D9E32)" } ].
+   at MongoDB.Driver.MongoCollectionImpl`1.BulkWriteAsync(IClientSessionHandle session, IEnumerable`1 requests, BulkWriteOptions options, CancellationToken cancellationToken)
+   at MongoDB.Driver.MongoCollectionImpl`1.UsingImplicitSessionAsync[TResult](Func`2 funcAsync, CancellationToken cancellationToken)
+   at MongoDB.Driver.MongoCollectionBase`1.ReplaceOneAsync(FilterDefinition`1 filter, TDocument replacement, ReplaceOptions options, Func`3 bulkWriteAsync)
+   --- End of inner exception stack trace ---
+   at MongoDB.Driver.MongoCollectionBase`1.ReplaceOneAsync(FilterDefinition`1 filter, TDocument replacement, ReplaceOptions options, Func`3 bulkWriteAsync)
+   at SteelDesignerEngineer.Data.MongoDB.PageContentRepository.CreateAsync(PageContent pageContent) in C:\Users\n.shchegolev\Desktop\steel-designer-engineer_v2\SteelDesignerEngineer.Data\MongoDB\PageContentRepository.cs:line 59
+   at SteelDesignerEngineer.Infrastructure.Services.PageContentService.CreatePageContentAsync(PageContent pageContent) in C:\Users\n.shchegolev\Desktop\steel-designer-engineer_v2\SteelDesignerEngineer.Infrastructure\Services\PageContentService.cs:line 72
+   at SteelDesignerEngineer.Application.Services.PageContentApplicationService.CreatePageContentAsync(PageContent pageContent) in C:\Users\n.shchegolev\Desktop\steel-designer-engineer_v2\SteelDesignerEngineer.Application\Services\PageContentApplicationService.cs:line 64
+   at Program.Main(String[] args) in C:\Users\n.shchegolev\Desktop\steel-designer-engineer_v2\SteelDesignerEngineer\Program.cs:line 118
+2026-01-12 13:12:19.678 +03:00 [INF] Main site: http://localhost:65031 (or https://localhost:65030)
+2026-01-12 13:12:19.680 +03:00 [INF] Default page URL: http://localhost:65031/ (serves static index) or API: https://localhost:65030/api/PageContent/by-name/home
+2026-01-12 13:12:19.697 +03:00 [INF] MessageHandlerHostedService запускается...
+2026-01-12 13:12:19.699 +03:00 [INF] Все обработчики сообщений успешно запущены и подписаны

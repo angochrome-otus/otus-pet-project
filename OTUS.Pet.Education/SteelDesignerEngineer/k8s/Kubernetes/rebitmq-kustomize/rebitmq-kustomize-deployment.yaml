@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rebitmq-kustomize
+  namespace: rebitmq
+  labels:
+    app: rebitmq-kustomize
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rebitmq-kustomize
+  template:
+    metadata:
+      labels:
+        app: rebitmq-kustomize
+    spec:
+      containers:
+        - name: rebitmq-kustomize
+          image: rabbitmq:3.13-management
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: amqp
+              containerPort: 5672
+            - name: management
+              containerPort: 15672
+          env:
+            - name: RABBITMQ_DEFAULT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: rebitmq-kustomize-secret
+                  key: RABBITMQ_DEFAULT_USER
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: rebitmq-kustomize-secret
+                  key: RABBITMQ_DEFAULT_PASS
+            - name: RABBITMQ_ERLANG_COOKIE
+              valueFrom:
+                secretKeyRef:
+                  name: rebitmq-kustomize-secret
+                  key: RABBITMQ_ERLANG_COOKIE
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/rabbitmq/mnesia
+          livenessProbe:
+            tcpSocket:
+              port: 5672
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: 5672
+            initialDelaySeconds: 10
+            periodSeconds: 5
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: rebitmq-kustomize-data

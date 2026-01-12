@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ollama-ingress
+  namespace: ollama
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: "web,websecure"
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.tls.certresolver: "mytlschallenge"
+    traefik.ingress.kubernetes.io/auth-type: "basic"
+    traefik.ingress.kubernetes.io/auth-secret: "ollama-basic-auth"
+    traefik.ingress.kubernetes.io/auth-realm: "Login Required"
+    traefik.ingress.kubernetes.io/auth-remove-header: "false"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: ollama.steel-designer-engineer.ru
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ollama
+                port:
+                  number: 11434
+  tls:
+    - hosts:
+        - ollama.steel-designer-engineer.ru
+      secretName: ollama-tls

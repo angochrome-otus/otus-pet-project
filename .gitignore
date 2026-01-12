@@ -5,3 +5,7 @@
 /OTUS.Pet.Education/.vs/OTUS.Pet.Education/CopilotIndices/18.0.927.32057/CodeChunks.db
 /.vs
 /OTUS.Pet.Education/.vs
+
+# Configuration files
+appsettings.json
+appsettings.*.json

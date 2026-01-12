@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: traefik-data
+  namespace: n8n
+data:
+  traefik.yaml: |
+    entryPoints:
+      web:
+        address: ":80"
+      websecure:
+        address: ":443"
+      mongodb:
+        address: ":27017"
+        tls:
+          passthrough: true
+
+    providers:
+      kubernetesCRD: {}
+      kubernetesIngress: {}
+
+    certificatesResolvers:
+      mytlschallenge:
+        acme:
+          email: i@nnshchegolev.ru
+          storage: /data/acme.json
+          httpChallenge:
+            entryPoint: web
+

@@ -1,0 +1,17 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: rebitmq-kustomize-n8n
+  namespace: n8n
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`rabbitmq.steel-designer-engineer.ru`)
+      kind: Rule
+      services:
+        - name: rebitmq-kustomize
+          namespace: rebitmq
+          port: 15672
+  tls:
+    certResolver: mytlschallenge

@@ -1,0 +1,32 @@
+﻿apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: n8n-db-backup
+  namespace: database
+spec:
+  schedule: "0 2 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: backup
+            image: pgvector/pgvector:pg16
+            command: 
+            - /bin/sh
+            - -c
+            - |
+              pg_dump -h postgres-global -U postgres n8n > /backup/n8n-backup-$(date +%Y%m%d-%H%M%S).sql
+              echo "Backup created: /backup/n8n-backup-$(date +%Y%m%d-%H%M%S).sql"
+            env:
+            - name: PGPASSWORD
+              value: "xxx711717"
+            volumeMounts:
+            - name: backup-volume
+              mountPath:  /root/backup
+          volumes:
+          - name: backup-volume
+            hostPath:
+              path:  /backup
+              type: DirectoryOrCreate
+          restartPolicy: OnFailure

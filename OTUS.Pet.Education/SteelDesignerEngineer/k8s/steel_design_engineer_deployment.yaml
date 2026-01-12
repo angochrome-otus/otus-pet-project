@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: steel-designer-engineer
+  namespace: steel-design-engineer
+  labels:
+    app: steel-designer-engineer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: steel-designer-engineer
+  template:
+    metadata:
+      labels:
+        app: steel-designer-engineer
+    spec:
+      imagePullSecrets:
+      - name: dockerhub-secret
+      containers:
+      - name: steel-designer-engineer
+        image: nnshchegolev/steel-designer-engineer:v1.0.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        - name: ASPNETCORE_URLS
+          value: "http://+:80"
+        - name: ASPNETCORE_FORWARDEDHEADERS_ENABLED
+          value: "true"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /swagger/index.html
+            port: 80
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /swagger/index.html
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: config
+          mountPath: /app/appsettings.Production.json
+          subPath: appsettings.json
+          readOnly: true
+      volumes:
+      - name: config
+        configMap:
+          name: steel-designer-engineer-config

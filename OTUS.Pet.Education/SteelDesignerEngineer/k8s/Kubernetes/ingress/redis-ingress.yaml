@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: redis-insight
+  namespace: n8n
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: "web,websecure"
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.tls.certresolver: "mytlschallenge"
+    traefik.ingress.kubernetes.io/auth-type: "basic"
+    traefik.ingress.kubernetes.io/auth-secret: "redis-basic-auth"
+    traefik.ingress.kubernetes.io/auth-realm: "Login Required"
+    traefik.ingress.kubernetes.io/auth-remove-header: "true"
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: redis.steel-designer-engineer.ru
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: redis-insight
+            port:
+              number: 5540
+  tls:
+  - hosts:
+    - redis.steel-designer-engineer.ru
+    secretName: redis-commander-tls

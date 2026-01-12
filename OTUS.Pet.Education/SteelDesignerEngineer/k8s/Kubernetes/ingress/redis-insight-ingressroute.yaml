@@ -1,0 +1,22 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+ name: redis-insight
+ namespace: n8n
+spec:
+ entryPoints:
+ - web
+ - websecure
+ routes:
+ - match: Host(`redis.steel-designer-engineer.com`)
+   kind: Rule
+   middlewares:
+   - name: redis-basic-auth
+     namespace: n8n
+   services:
+   - name: redis-insight
+     port: 5540
+     scheme: http
+     passHostHeader: true
+ tls:
+   secretName: redis-commander-tls

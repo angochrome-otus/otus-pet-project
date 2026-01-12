@@ -1,0 +1,106 @@
+[
+  {
+    "ContainingType": "SteelDesignerEngineer.WebApi.Controllers.ConfigController",
+    "Method": "GetSiteSettings",
+    "RelativePath": "api/Config/site-settings",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "SteelDesignerEngineer.WebApi.Controllers.PageController",
+    "Method": "Status",
+    "RelativePath": "api/Page",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "SteelDesignerEngineer.WebApi.Controllers.PageContentController",
+    "Method": "GetAll",
+    "RelativePath": "api/PageContent",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "SteelDesignerEngineer.WebApi.Controllers.PageContentController",
+    "Method": "Create",
+    "RelativePath": "api/PageContent",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "SteelDesignerEngineer.Domain.Entities.PageContent",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "SteelDesignerEngineer.WebApi.Controllers.PageContentController",
+    "Method": "GetById",
+    "RelativePath": "api/PageContent/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "SteelDesignerEngineer.WebApi.Controllers.PageContentController",
+    "Method": "GetByName",
+    "RelativePath": "api/PageContent/by-name/{pageName}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "pageName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "SteelDesignerEngineer.WebApi.Controllers.PageContentController",
+    "Method": "DeleteByName",
+    "RelativePath": "api/PageContent/by-name/{pageName}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "pageName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "SteelDesignerEngineer.WebApi.Controllers.PageContentController",
+    "Method": "GetCount",
+    "RelativePath": "api/PageContent/count",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  }
+]

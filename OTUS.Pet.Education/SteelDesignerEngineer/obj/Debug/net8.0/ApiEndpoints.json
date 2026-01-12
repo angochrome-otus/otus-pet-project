@@ -1,0 +1,114 @@
+[
+  {
+    "ContainingType": "SteelDesignerEngineer.Extensions.Controllers.MongoDBTestController",
+    "Method": "GetCollections",
+    "RelativePath": "api/MongoDBTest/collections",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "SteelDesignerEngineer.Extensions.Controllers.MongoDBTestController",
+    "Method": "TestConnection",
+    "RelativePath": "api/MongoDBTest/test-connection",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.String",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "SteelDesignerEngineer.Extensions.Controllers.PageContentController",
+    "Method": "GetAllPageContent",
+    "RelativePath": "api/PageContent",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[SteelDesignerEngineer.Domain.Entities.PageContent, SteelDesignerEngineer.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "SteelDesignerEngineer.Extensions.Controllers.PageContentController",
+    "Method": "CreatePageContent",
+    "RelativePath": "api/PageContent",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "pageContent",
+        "Type": "SteelDesignerEngineer.Domain.Entities.PageContent",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "SteelDesignerEngineer.Domain.Entities.PageContent",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "SteelDesignerEngineer.Extensions.Controllers.PageContentController",
+    "Method": "GetPageContentByPageName",
+    "RelativePath": "api/PageContent/{pageName}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "pageName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "SteelDesignerEngineer.Domain.Entities.PageContent",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  }
+]

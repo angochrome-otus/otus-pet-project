@@ -1,0 +1,5 @@
+C:\Users\n.shchegolev\Desktop\steel-designer-engineer\SteelDesignerEngineer.Data\obj\Debug\net10.0\SteelDesignerEngineer.Data.csproj.AssemblyReference.cache
+C:\Users\n.shchegolev\Desktop\steel-designer-engineer\SteelDesignerEngineer.Data\obj\Debug\net10.0\SteelDesignerEngineer.Data.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\n.shchegolev\Desktop\steel-designer-engineer\SteelDesignerEngineer.Data\obj\Debug\net10.0\SteelDesignerEngineer.Data.AssemblyInfoInputs.cache
+C:\Users\n.shchegolev\Desktop\steel-designer-engineer\SteelDesignerEngineer.Data\obj\Debug\net10.0\SteelDesignerEngineer.Data.AssemblyInfo.cs
+C:\Users\n.shchegolev\Desktop\steel-designer-engineer\SteelDesignerEngineer.Data\obj\Debug\net10.0\SteelDesignerEngineer.Data.csproj.CoreCompileInputs.cache

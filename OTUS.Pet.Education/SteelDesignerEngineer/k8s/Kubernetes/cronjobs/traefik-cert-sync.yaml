@@ -1,0 +1,90 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: traefik-cert-sync
+  namespace: n8n
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: traefik-cert-sync-role
+  namespace: n8n
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get","list","create","update","patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: traefik-cert-sync-rb
+  namespace: n8n
+subjects:
+  - kind: ServiceAccount
+    name: traefik-cert-sync
+    namespace: n8n
+roleRef:
+  kind: Role
+  name: traefik-cert-sync-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# CronJob: каждые 6 часов синхронизирует сертификаты из /letsencrypt/acme.json (Traefik) в TLS Secrets
+# Использует resolver mytlschallenge
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: traefik-cert-sync
+  namespace: n8n
+spec:
+  schedule: "0 */168 * * *"   # каждые 6 часов
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          serviceAccountName: traefik-cert-sync
+          restartPolicy: OnFailure
+          containers:
+            - name: sync
+              image: alpine:3.20
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: DOMAINS
+                  value: "n8n.steel-designer-engineer.com redis.steel-designer-engineer.com"
+                - name: RESOLVER_KEY
+                  value: "mytlschallenge"   # корневой ключ в acme.json
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  apk add --no-cache jq openssl >/dev/null
+                  FILE=/letsencrypt/acme.json
+                  if [ ! -s "$FILE" ]; then
+                    echo "[WARN] acme.json empty or missing"; exit 0; fi
+                  changed=0
+                  for D in $DOMAINS; do
+                    CERT_B64=$(jq -r --arg d "$D" --arg r "$RESOLVER_KEY" '.[$r].Certificates[]? | select(.domain.main==$d) | .certificate' "$FILE")
+                    KEY_B64=$(jq -r --arg d "$D" --arg r "$RESOLVER_KEY" '.[$r].Certificates[]? | select(.domain.main==$d) | .key' "$FILE")
+                    if [ -z "$CERT_B64" ] || [ "$CERT_B64" = "null" ]; then
+                      echo "[INFO] No cert yet for $D"; continue; fi
+                    echo "$CERT_B64" | base64 -d > cert.pem
+                    echo "$KEY_B64"  | base64 -d > key.pem
+                    if ! openssl x509 -in cert.pem -noout >/dev/null 2>&1; then
+                      echo "[ERROR] Invalid cert for $D"; continue; fi
+                    SECRET_NAME=$(echo $D | sed 's/[^a-z0-9.-]/-/g' | sed 's/\.$//' | sed 's/\./-/g')-tls
+                    kubectl -n n8n create secret tls "$SECRET_NAME" --cert=cert.pem --key=key.pem --dry-run=client -o yaml | kubectl apply -f -
+                    echo "[OK] Synced $D -> $SECRET_NAME"; changed=1
+                  done
+                  if [ $changed -eq 0 ]; then echo "[DONE] Nothing updated"; fi
+              volumeMounts:
+                - name: traefik-data
+                  mountPath: /letsencrypt
+                  readOnly: true
+          volumes:
+            - name: traefik-data
+              persistentVolumeClaim:
+                claimName: traefik-data

@@ -1,0 +1,5 @@
+@SteelDesignerEngineer.WebApi_HostAddress = https://steel-designer-engineer.ru/
+
+GET {{SteelDesignerEngineer.WebApi_HostAddress}}/weatherforecast/
+Accept: application/json
+###

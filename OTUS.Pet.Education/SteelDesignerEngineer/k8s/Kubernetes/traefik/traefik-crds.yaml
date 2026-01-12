@@ -1,0 +1,231 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: middlewares.traefik.containo.us
+spec:
+  group: traefik.containo.us
+  names:
+    kind: Middleware
+    listKind: MiddlewareList
+    plural: middlewares
+    singular: middleware
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          x-kubernetes-preserve-unknown-fields: true
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: ingressroutes.traefik.containo.us
+spec:
+  group: traefik.containo.us
+  names:
+    kind: IngressRoute
+    listKind: IngressRouteList
+    plural: ingressroutes
+    singular: ingressroute
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          x-kubernetes-preserve-unknown-fields: true
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: ingressroutetcps.traefik.containo.us
+spec:
+  group: traefik.containo.us
+  names:
+    kind: IngressRouteTCP
+    listKind: IngressRouteTCPList
+    plural: ingressroutetcps
+    singular: ingressroutetcp
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          x-kubernetes-preserve-unknown-fields: true
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: ingressrouteudps.traefik.containo.us
+spec:
+  group: traefik.containo.us
+  names:
+    kind: IngressRouteUDP
+    listKind: IngressRouteUDPList
+    plural: ingressrouteudps
+    singular: ingressrouteudp
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          x-kubernetes-preserve-unknown-fields: true
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: tlsoptions.traefik.containo.us
+spec:
+  group: traefik.containo.us
+  names:
+    kind: TLSOption
+    listKind: TLSOptionList
+    plural: tlsoptions
+    singular: tlsoption
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          x-kubernetes-preserve-unknown-fields: true
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: tlsstores.traefik.containo.us
+spec:
+  group: traefik.containo.us
+  names:
+    kind: TLSStore
+    listKind: TLSStoreList
+    plural: tlsstores
+    singular: tlsstore
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          x-kubernetes-preserve-unknown-fields: true
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: traefikservices.traefik.containo.us
+spec:
+  group: traefik.containo.us
+  names:
+    kind: TraefikService
+    listKind: TraefikServiceList
+    plural: traefikservices
+    singular: traefikservice
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          x-kubernetes-preserve-unknown-fields: true
+---
+# Example Middleware for n8n (kept for reference)
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: n8n-headers
+  namespace: n8n
+spec:
+  headers:
+    customRequestHeaders:
+      X-Custom-Header: "Some Value"
+    customResponseHeaders:
+      X-Custom-Response-Header: "Another Value"
+---
+# Example IngressRoute for n8n (kept for reference)
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: n8n-ingressroute
+  namespace: n8n
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    - match: Host("n8n.steel-designer-engineer.com")
+      kind: Rule
+      middlewares:
+        - name: n8n-headers
+      services:
+        - name: n8n
+          port: 5678
+  tls:
+    secretName: n8n-tls
+---
+# Example IngressRoute for mongo-express (kept for reference)
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: mongo-express-ingressroute
+  namespace: n8n
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    - match: Host(`mongodb.steel-designer-engineer.com`)
+      kind: Rule
+      services:
+        - name: mongo-express
+          namespace: mongodb
+          port: 8081
+  tls:
+    certResolver: mytlschallenge
+---
+# Qdrant middleware (basic auth) and IngressRoute
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: qdrant-basic-auth
+  namespace: qdrant
+spec:
+  basicAuth:
+    secret: qdrant-basic-auth
+    removeHeader: true
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: qdrant
+  namespace: qdrant
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    - match: Host(`qdrant.steel-designer-engineer.com`)
+      kind: Rule
+      middlewares:
+        - name: qdrant-basic-auth
+      services:
+        - name: qdrant
+          port: 6333
+  tls:
+    certResolver: mytlschallenge

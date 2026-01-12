@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Авторизация в Steel Designer Engineer</title>
+    <style>
+        :root{
+            --primary-1: #667eea;
+            --primary-2: #764ba2;
+            --bg: linear-gradient(135deg, var(--primary-1) 0%, var(--primary-2) 100%);
+            --card-bg: #ffffff;
+            --muted: #6c757d;
+            --success: #28a745;
+            --danger: #dc3545;
+        }
+        *{box-sizing: border-box; margin:0; padding:0;}
+        body{font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:var(--bg); color:#222; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;}
+        
+        .login-container{max-width:450px; width:100%;}
+        .card{background:var(--card-bg); border-radius:20px; padding:40px; box-shadow:0 20px 60px rgba(0,0,0,0.2);}
+        
+        .logo-section{text-align:center; margin-bottom:30px;}
+        .logo{width:80px; height:80px; background:linear-gradient(135deg, var(--primary-1), var(--primary-2)); border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:40px; margin-bottom:16px;}
+        .logo-section h1{font-size:24px; margin-bottom:6px; color:#333;}
+        .logo-section p{color:var(--muted); font-size:14px;}
+        
+        .form-group{margin-bottom:20px;}
+        .form-group label{display:block; margin-bottom:8px; font-weight:600; color:#333;}
+        .form-group input{width:100%; padding:14px; border:2px solid #e0e0e0; border-radius:10px; font-size:16px; transition:border-color 0.3s;}
+        .form-group input:focus{outline:none; border-color:var(--primary-1);}
+        
+        .form-options{display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; font-size:14px;}
+        .form-options label{display:flex; align-items:center; gap:6px; color:#666;}
+        .form-options a{color:var(--primary-1); text-decoration:none;}
+        .form-options a:hover{text-decoration:underline;}
+        
+        .btn{width:100%; padding:14px; border:none; border-radius:10px; font-size:16px; font-weight:600; cursor:pointer; transition:all 0.3s;}
+        .btn-primary{background:linear-gradient(135deg, var(--primary-1), var(--primary-2)); color:white; box-shadow:0 4px 15px rgba(102, 126, 234, 0.4);}
+        .btn-primary:hover{transform:translateY(-2px); box-shadow:0 6px 20px rgba(102, 126, 234, 0.5);}
+        
+        .divider{text-align:center; margin:24px 0; color:var(--muted); position:relative;}
+        .divider::before, .divider::after{content:''; position:absolute; top:50%; width:40%; height:1px; background:#e0e0e0;}
+        .divider::before{left:0;}
+        .divider::after{right:0;}
+        
+        .social-login{display:flex; gap:12px;}
+        .btn-social{flex:1; padding:12px; border:2px solid #e0e0e0; background:white; border-radius:10px; cursor:pointer; transition:all 0.3s; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:600;}
+        .btn-social:hover{border-color:var(--primary-1); transform:translateY(-2px);}
+        
+        .register-link{text-align:center; margin-top:24px; color:#666;}
+        .register-link a{color:var(--primary-1); text-decoration:none; font-weight:600;}
+        .register-link a:hover{text-decoration:underline;}
+        
+        .back-link{text-align:center; margin-top:20px;}
+        .back-link a{color:white; text-decoration:none; display:inline-flex; align-items:center; gap:6px; font-weight:500;}
+        .back-link a:hover{text-decoration:underline;}
+        
+        .alert{padding:12px; border-radius:8px; margin-bottom:20px; display:none;}
+        .alert-success{background:#d4edda; color:#155724; border:1px solid #c3e6cb;}
+        .alert-danger{background:#f8d7da; color:#721c24; border:1px solid #f5c6cb;}
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="card">
+            <div class="logo-section">
+                <div class="logo">🎓</div>
+                <h1>Добро пожаловать!</h1>
+                <p>Войдите в свой аккаунт портала</p>
+            </div>
+
+            <div id="alert" class="alert"></div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" placeholder="your@email.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Пароль</label>
+                    <input type="password" id="password" placeholder="••••••••" required>
+                </div>
+
+                <div class="form-options">
+                    <label>
+                        <input type="checkbox" id="remember">
+                        Запомнить меня
+                    </label>
+                    <a href="#">Забыли пароль?</a>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Войти</button>
+            </form>
+
+            <div class="divider">или</div>
+
+            <div class="social-login">
+                <button class="btn-social" onclick="socialLogin('google')">
+                    🔍 Google
+                </button>
+                <button class="btn-social" onclick="socialLogin('github')">
+                    💻 GitHub
+                </button>
+            </div>
+
+            <div class="register-link">
+                Нет аккаунта? <a href="#" onclick="alert('Регистрация будет доступна позже'); return false;">Зарегистрироваться</a>
+            </div>
+        </div>
+
+        <div class="back-link">
+            <a href="/">← Вернуться на главную</a>
+        </div>
+    </div>
+
+    <script>
+        const loginForm = document.getElementById('loginForm');
+        const alertBox = document.getElementById('alert');
+
+        function showAlert(message, type) {
+            alertBox.innerHTML = message;
+            alertBox.className = `alert alert-${type}`;
+            alertBox.style.display = 'block';
+            setTimeout(() => {
+                alertBox.style.display = 'none';
+            }, 5000);
+        }
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const remember = document.getElementById('remember').checked;
+
+            // Демо-проверка (замените на реальный API)
+            if (email === 'demo@steel-designer.ru' && password === 'demo123') {
+                showAlert('Успешный вход! Перенаправление...', 'success');
+                
+                // Сохраняем данные в localStorage с правильным кодированием
+                try {
+                    localStorage.setItem('isAuthenticated', 'true');
+                    localStorage.setItem('userEmail', email);
+                    localStorage.setItem('userName', encodeURIComponent('Демо Пользователь'));
+                } catch(e) {
+                    console.error('Ошибка сохранения в localStorage:', e);
+                }
+                
+                // Перенаправление через 1.5 секунды
+                setTimeout(() => {
+                    window.location.href = 'profile.html';
+                }, 1500);
+            } else {
+                showAlert('Неверный email или пароль.<br>Подсказка: <strong>demo@steel-designer.ru</strong> / <strong>demo123</strong>', 'danger');
+            }
+        });
+
+        function socialLogin(provider) {
+            const messages = {
+                'google': 'Google',
+                'github': 'GitHub'
+            };
+            showAlert('Авторизация через ' + messages[provider] + ' будет доступна позже', 'danger');
+        }
+
+        // Проверка: если уже авторизован, перенаправить в профиль
+        if (localStorage.getItem('isAuthenticated') === 'true') {
+            window.location.href = 'profile.html';
+        }
+    </script>
+</body>
+</html>
