@@ -14,9 +14,29 @@ public interface IAuthApplicationService
     Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default);
     
     /// <summary>
+    /// јвторизаци€ пользовател€ с записью IP адреса
+    /// </summary>
+    Task<LoginResponse> LoginAsync(LoginRequest request, string? ipAddress, CancellationToken cancellationToken = default);
+    
+    /// <summary>
     /// –егистраци€ нового пользовател€
     /// </summary>
     Task<RegisterResponse> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// –егистраци€ нового пользовател€ с записью IP адреса
+    /// </summary>
+    Task<RegisterResponse> RegisterAsync(RegisterRequest request, string? ipAddress, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// јвторизаци€/регистраци€ через OAuth (Google, GitHub)
+    /// </summary>
+    Task<OAuthLoginResponse> OAuthLoginAsync(OAuthUserInfo oauthUser, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// јвторизаци€/регистраци€ через OAuth с записью IP адреса
+    /// </summary>
+    Task<OAuthLoginResponse> OAuthLoginAsync(OAuthUserInfo oauthUser, string? ipAddress, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// ѕолучить пользовател€ по ID

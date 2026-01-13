@@ -3,118 +3,219 @@ using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 
 namespace SteelDesignerEngineer.Infrastructure.Messaging
 {
     /// <summary>
+    /// Message serializer interface - OCP compliance
+    /// </summary>
+    public interface IMessageSerializer
+    {
+        string Serialize<T>(T message);
+        T? Deserialize<T>(string data);
+    }
+
+    /// <summary>
+    /// Default JSON serializer implementation
+    /// </summary>
+    public class JsonMessageSerializer : IMessageSerializer
+    {
+        public string Serialize<T>(T message)
+        {
+            return JsonSerializer.Serialize(message);
+        }
+
+        public T? Deserialize<T>(string data)
+        {
+            return JsonSerializer.Deserialize<T>(data);
+        }
+    }
+
+    /// <summary>
     /// Реализация шины сообщений с использованием RabbitMQ с DIP
+    /// Lazy Loading - подключение создается только при первом использовании
+    /// SOLID compliant: SRP, OCP, LSP, ISP, DIP
     /// </summary>
     public class RabbitMqMessageBus : IMessageBus, IDisposable
     {
         private readonly IRabbitMqConnection _rabbitMqConnection;
-        private readonly IChannel _channel;
+        private readonly Lazy<IChannel> _channel;
+        private readonly IMessageSerializer _serializer;
+        private readonly ILogger<RabbitMqMessageBus>? _logger;
         private bool _disposed;
 
-        public RabbitMqMessageBus(IConnection connection, IRabbitMqConnection rabbitMqConnection)
+        public RabbitMqMessageBus(
+            Lazy<IConnection> lazyConnection, 
+            IRabbitMqConnection rabbitMqConnection,
+            IMessageSerializer? serializer = null,
+            ILogger<RabbitMqMessageBus>? logger = null)
         {
             _rabbitMqConnection = rabbitMqConnection ?? throw new ArgumentNullException(nameof(rabbitMqConnection));
-            _channel = connection.CreateChannelAsync().GetAwaiter().GetResult();
+            _serializer = serializer ?? new JsonMessageSerializer(); // Default serializer
+            _logger = logger;
+            
+            // Lazy initialization of channel
+            _channel = new Lazy<IChannel>(() =>
+            {
+                _logger?.LogInformation("Creating RabbitMQ channel (Lazy Loading)");
+                var connection = lazyConnection.Value; // Connection created here on first access
+                return connection.CreateChannelAsync().GetAwaiter().GetResult();
+            });
         }
 
         public async Task PublishAsync<T>(string queueName, T message)
         {
-            // Объявляем очередь (создаётся, если не существует)
-            await _channel.QueueDeclareAsync(
-                queue: queueName,
-                durable: true,
-                exclusive: false,
-                autoDelete: false,
-                arguments: null
-            );
-
-            // Сериализуем сообщение
-            var json = JsonSerializer.Serialize(message);
-            var body = Encoding.UTF8.GetBytes(json);
-
-            // Публикуем с настройками для персистентности
-            var properties = new BasicProperties
+            try
             {
-                Persistent = true
-            };
+                // Декларация очереди (создается, если не существует)
+                await _channel.Value.QueueDeclareAsync(
+                    queue: queueName,
+                    durable: true,
+                    exclusive: false,
+                    autoDelete: false,
+                    arguments: null
+                );
 
-            await _channel.BasicPublishAsync(
-                exchange: string.Empty,
-                routingKey: queueName,
-                mandatory: false,
-                basicProperties: properties,
-                body: body
-            );
+                // ? OCP: Используем абстракцию IMessageSerializer
+                var json = _serializer.Serialize(message);
+                var body = Encoding.UTF8.GetBytes(json);
+
+                // Отправка с подтверждением для персистентности
+                var properties = new BasicProperties
+                {
+                    Persistent = true
+                };
+
+                await _channel.Value.BasicPublishAsync(
+                    exchange: string.Empty,
+                    routingKey: queueName,
+                    mandatory: false,
+                    basicProperties: properties,
+                    body: body
+                );
+
+                _logger?.LogDebug("Message published to queue: {QueueName}", queueName);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error publishing message to queue: {QueueName}", queueName);
+                throw;
+            }
         }
 
-        public async Task<T> ConsumeAsync<T>(string queueName, TimeSpan timeout )
+        public async Task<T> ConsumeAsync<T>(string queueName, TimeSpan timeout)
         {
-            await _channel.QueueDeclareAsync(
-                queue: queueName,
-                durable: true,
-                exclusive: false,
-                autoDelete: false,
-                arguments: null
-            );
+            try
+            {
+                await _channel.Value.QueueDeclareAsync(
+                    queue: queueName,
+                    durable: true,
+                    exclusive: false,
+                    autoDelete: false,
+                    arguments: null
+                );
 
-            BasicGetResult? result = await _channel.BasicGetAsync(queueName, autoAck: true);
-            
-            
+                BasicGetResult? result = await _channel.Value.BasicGetAsync(queueName, autoAck: true);
+                
+                if (result == null)
+                {
+                    throw new InvalidOperationException($"No messages in queue: {queueName}");
+                }
 
-            var json = Encoding.UTF8.GetString(result.Body.ToArray());
-            var messageObj = JsonSerializer.Deserialize<T>(json);
+                // ? OCP: Используем абстракцию IMessageSerializer
+                var json = Encoding.UTF8.GetString(result.Body.ToArray());
+                var messageObj = _serializer.Deserialize<T>(json);
 
-            return messageObj;
+                if (messageObj == null)
+                {
+                    throw new InvalidOperationException($"Failed to deserialize message from queue: {queueName}");
+                }
+
+                return messageObj;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error consuming message from queue: {QueueName}", queueName);
+                throw;
+            }
         }
 
         public void Subscribe<T>(string queueName, Action<T> handler)
         {
-            _channel.QueueDeclareAsync(
-                queue: queueName,
-                durable: true,
-                exclusive: false,
-                autoDelete: false,
-                arguments: null
-            ).GetAwaiter().GetResult();
-
-            var consumer = new AsyncEventingBasicConsumer(_channel);
-            consumer.ReceivedAsync += async (model, ea) =>
+            try
             {
-                var body = ea.Body.ToArray();
-                var json = Encoding.UTF8.GetString(body);
-                var messageObj = JsonSerializer.Deserialize<T>(json);
+                _channel.Value.QueueDeclareAsync(
+                    queue: queueName,
+                    durable: true,
+                    exclusive: false,
+                    autoDelete: false,
+                    arguments: null
+                ).GetAwaiter().GetResult();
 
-                if (messageObj != null)
+                var consumer = new AsyncEventingBasicConsumer(_channel.Value);
+                consumer.ReceivedAsync += async (model, ea) =>
                 {
-                    handler(messageObj);
-                }
+                    try
+                    {
+                        var body = ea.Body.ToArray();
+                        var json = Encoding.UTF8.GetString(body);
+                        
+                        // ? OCP: Используем абстракцию IMessageSerializer
+                        var messageObj = _serializer.Deserialize<T>(json);
 
-                await _channel.BasicAckAsync(ea.DeliveryTag, false);
-            };
+                        if (messageObj != null)
+                        {
+                            handler(messageObj);
+                        }
 
-            _channel.BasicConsumeAsync(
-                queue: queueName,
-                autoAck: false,
-                consumer: consumer
-            ).GetAwaiter().GetResult();
+                        await _channel.Value.BasicAckAsync(ea.DeliveryTag, false);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger?.LogError(ex, "Error handling message from queue: {QueueName}", queueName);
+                        // NACK message on error
+                        await _channel.Value.BasicNackAsync(ea.DeliveryTag, false, true);
+                    }
+                };
+
+                _channel.Value.BasicConsumeAsync(
+                    queue: queueName,
+                    autoAck: false,
+                    consumer: consumer
+                ).GetAwaiter().GetResult();
+
+                _logger?.LogInformation("Subscribed to queue: {QueueName}", queueName);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error subscribing to queue: {QueueName}", queueName);
+                throw;
+            }
         }
 
         public void Dispose()
         {
             if (!_disposed)
             {
-                _channel?.CloseAsync().GetAwaiter().GetResult();
-                _channel?.Dispose();
-                _rabbitMqConnection?.Dispose();
-                _disposed = true;
+                try
+                {
+                    if (_channel.IsValueCreated)
+                    {
+                        _channel.Value?.CloseAsync().GetAwaiter().GetResult();
+                        _channel.Value?.Dispose();
+                    }
+                    _rabbitMqConnection?.Dispose();
+                    _disposed = true;
+                    
+                    _logger?.LogInformation("RabbitMqMessageBus disposed");
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogError(ex, "Error disposing RabbitMqMessageBus");
+                }
             }
             GC.SuppressFinalize(this);
         }
-
-        
     }
 }

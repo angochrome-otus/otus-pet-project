@@ -1,9 +1,15 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Авторизация в Steel Designer Engineer</title>
+    <title>SDI - Login</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="alternate icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.svg">
+    
     <style>
         :root{
             --primary-1: #667eea;
@@ -21,7 +27,7 @@
         .card{background:var(--card-bg); border-radius:20px; padding:40px; box-shadow:0 20px 60px rgba(0,0,0,0.2);}
         
         .logo-section{text-align:center; margin-bottom:30px;}
-        .logo{width:80px; height:80px; background:linear-gradient(135deg, var(--primary-1), var(--primary-2)); border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:40px; margin-bottom:16px;}
+        .logo{width:80px; height:80px; background:#1976D2; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:22px; font-weight:bold; color:white; margin-bottom:16px; letter-spacing:1px;}
         .logo-section h1{font-size:24px; margin-bottom:6px; color:#333;}
         .logo-section p{color:var(--muted); font-size:14px;}
         
@@ -37,7 +43,8 @@
         
         .btn{width:100%; padding:14px; border:none; border-radius:10px; font-size:16px; font-weight:600; cursor:pointer; transition:all 0.3s;}
         .btn-primary{background:linear-gradient(135deg, var(--primary-1), var(--primary-2)); color:white; box-shadow:0 4px 15px rgba(102, 126, 234, 0.4);}
-        .btn-primary:hover{transform:translateY(-2px); box-shadow:0 6px 20px rgba(102, 126, 234, 0.5);}
+        .btn-primary:hover:not(:disabled){transform:translateY(-2px); box-shadow:0 6px 20px rgba(102, 126, 234, 0.5);}
+        .btn-primary:disabled{opacity:0.6; cursor:not-allowed;}
         
         .divider{text-align:center; margin:24px 0; color:var(--muted); position:relative;}
         .divider::before, .divider::after{content:''; position:absolute; top:50%; width:40%; height:1px; background:#e0e0e0;}
@@ -45,8 +52,9 @@
         .divider::after{right:0;}
         
         .social-login{display:flex; gap:12px;}
-        .btn-social{flex:1; padding:12px; border:2px solid #e0e0e0; background:white; border-radius:10px; cursor:pointer; transition:all 0.3s; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:600;}
-        .btn-social:hover{border-color:var(--primary-1); transform:translateY(-2px);}
+        .btn-social{flex:1; padding:12px; border:2px solid #e0e0e0; background:white; border-radius:10px; cursor:pointer; transition:all 0.3s; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:600; color:#333;}
+        .btn-social:hover{border-color:var(--primary-1); transform:translateY(-2px); background:#f8f9fa;}
+        .btn-social:disabled{opacity:0.6; cursor:not-allowed;}
         
         .register-link{text-align:center; margin-top:24px; color:#666;}
         .register-link a{color:var(--primary-1); text-decoration:none; font-weight:600;}
@@ -65,9 +73,9 @@
     <div class="login-container">
         <div class="card">
             <div class="logo-section">
-                <div class="logo">🎓</div>
-                <h1>Добро пожаловать!</h1>
-                <p>Войдите в свой аккаунт портала</p>
+                <div class="logo">SDI</div>
+                <h1>Welcome Back!</h1>
+                <p>Steel Designer Engineer</p>
             </div>
 
             <div id="alert" class="alert"></div>
@@ -79,45 +87,50 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="password">Пароль</label>
+                    <label for="password">Password</label>
                     <input type="password" id="password" placeholder="••••••••" required>
                 </div>
 
                 <div class="form-options">
                     <label>
                         <input type="checkbox" id="remember">
-                        Запомнить меня
+                        Remember me
                     </label>
-                    <a href="#">Забыли пароль?</a>
+                    <a href="#">Forgot password?</a>
                 </div>
 
-                <button type="submit" class="btn btn-primary">Войти</button>
+                <button type="submit" class="btn btn-primary" id="loginBtn">Login</button>
             </form>
 
-            <div class="divider">или</div>
+            <div class="divider">or</div>
 
             <div class="social-login">
-                <button class="btn-social" onclick="socialLogin('google')">
+                <button class="btn-social" id="googleBtn" onclick="socialLogin('google')">
                     🔍 Google
                 </button>
-                <button class="btn-social" onclick="socialLogin('github')">
+                <button class="btn-social" id="githubBtn" onclick="socialLogin('github')">
                     💻 GitHub
                 </button>
             </div>
 
             <div class="register-link">
-                Нет аккаунта? <a href="#" onclick="alert('Регистрация будет доступна позже'); return false;">Зарегистрироваться</a>
+                Don't have an account? <a href="register.html">Register</a>
             </div>
         </div>
 
         <div class="back-link">
-            <a href="/">← Вернуться на главную</a>
+            <a href="/">← Back to home</a>
         </div>
     </div>
 
     <script>
         const loginForm = document.getElementById('loginForm');
         const alertBox = document.getElementById('alert');
+        const loginBtn = document.getElementById('loginBtn');
+        const googleBtn = document.getElementById('googleBtn');
+        const githubBtn = document.getElementById('githubBtn');
+        
+        const API_URL = window.location.origin;
 
         function showAlert(message, type) {
             alertBox.innerHTML = message;
@@ -133,41 +146,81 @@
 
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const remember = document.getElementById('remember').checked;
 
-            // Демо-проверка (замените на реальный API)
-            if (email === 'demo@steel-designer.ru' && password === 'demo123') {
-                showAlert('Успешный вход! Перенаправление...', 'success');
-                
-                // Сохраняем данные в localStorage с правильным кодированием
-                try {
-                    localStorage.setItem('isAuthenticated', 'true');
-                    localStorage.setItem('userEmail', email);
-                    localStorage.setItem('userName', encodeURIComponent('Демо Пользователь'));
-                } catch(e) {
-                    console.error('Ошибка сохранения в localStorage:', e);
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Checking...';
+
+            try {
+                const response = await fetch(`${API_URL}/api/Auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showAlert('✅ Login successful! Redirecting...', 'success');
+                    
+                    // Save user info for UI (not for authentication!)
+                    localStorage.setItem('userEmail', data.user.email);
+                    localStorage.setItem('userId', data.user.id);
+                    localStorage.setItem('userRole', data.user.role);
+                    localStorage.setItem('userFirstName', data.user.firstName);
+                    localStorage.setItem('userLastName', data.user.lastName);
+                    
+                    setTimeout(() => {
+                        window.location.href = 'profile.html';
+                    }, 1000);
+                } else {
+                    showAlert(`❌ ${data.message || 'Invalid email or password'}`, 'danger');
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'Login';
                 }
-                
-                // Перенаправление через 1.5 секунды
-                setTimeout(() => {
-                    window.location.href = 'profile.html';
-                }, 1500);
-            } else {
-                showAlert('Неверный email или пароль.<br>Подсказка: <strong>demo@steel-designer.ru</strong> / <strong>demo123</strong>', 'danger');
+            } catch (error) {
+                console.error('Login error:', error);
+                showAlert('❌ Server connection error', 'danger');
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Login';
             }
         });
 
-        function socialLogin(provider) {
-            const messages = {
-                'google': 'Google',
-                'github': 'GitHub'
-            };
-            showAlert('Авторизация через ' + messages[provider] + ' будет доступна позже', 'danger');
-        }
+        // OAuth Social Login
+        async function socialLogin(provider) {
+            try {
+                localStorage.setItem('oauth_provider', provider);
 
-        // Проверка: если уже авторизован, перенаправить в профиль
-        if (localStorage.getItem('isAuthenticated') === 'true') {
-            window.location.href = 'profile.html';
+                googleBtn.disabled = true;
+                githubBtn.disabled = true;
+
+                const response = await fetch(`${API_URL}/api/Auth/oauth/${provider}/url`, {
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || `${provider} OAuth not configured`);
+                }
+
+                const data = await response.json();
+
+                if (data.authUrl) {
+                    showAlert(`🔄 Redirecting to ${provider}...`, 'success');
+                    setTimeout(() => {
+                        window.location.href = data.authUrl;
+                    }, 500);
+                } else {
+                    throw new Error('OAuth URL not available');
+                }
+            } catch (error) {
+                console.error(`${provider} OAuth error:`, error);
+                showAlert(`❌ ${error.message}`, 'danger');
+                googleBtn.disabled = false;
+                githubBtn.disabled = false;
+            }
         }
     </script>
 </body>

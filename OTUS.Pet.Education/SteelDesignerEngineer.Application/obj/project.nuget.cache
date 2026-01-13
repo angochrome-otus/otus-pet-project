@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "XBsdscGgXQ8=",
+  "dgSpecHash": "ZZivaKyXzug=",
   "success": true,
-  "projectFilePath": "C:\\Users\\find\\Desktop\\Qdrant\\steel-designer-engineer_v2\\SteelDesignerEngineer.Application\\SteelDesignerEngineer.Application.csproj",
+  "projectFilePath": "C:\\Users\\find\\source\\repos\\otus-pet-project\\OTUS.Pet.Education\\SteelDesignerEngineer.Application\\SteelDesignerEngineer.Application.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\find\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\9.0.0\\microsoft.extensions.dependencyinjection.abstractions.9.0.0.nupkg.sha512",
     "C:\\Users\\find\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\9.0.0\\microsoft.extensions.logging.abstractions.9.0.0.nupkg.sha512",

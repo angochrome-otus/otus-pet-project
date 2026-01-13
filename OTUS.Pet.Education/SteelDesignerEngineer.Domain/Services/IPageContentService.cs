@@ -7,7 +7,8 @@ using System.Threading.Tasks;
 namespace SteelDesignerEngineer.Domain.Services
 {
     /// <summary>
-    /// Интерфейс сервиса для работы с содержимым страниц (DIP)
+    /// Interface for PageContent domain service
+    /// LSP: Clear operation contracts
     /// </summary>
     public interface IPageContentService
     {

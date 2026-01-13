@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\find\\Desktop\\Qdrant\\steel-designer-engineer_v2\\SteelDesignerEngineer.Domain\\SteelDesignerEngineer.Domain.csproj": {}
+    "C:\\Users\\find\\source\\repos\\otus-pet-project\\OTUS.Pet.Education\\SteelDesignerEngineer.Domain\\SteelDesignerEngineer.Domain.csproj": {}
   },
   "projects": {
-    "C:\\Users\\find\\Desktop\\Qdrant\\steel-designer-engineer_v2\\SteelDesignerEngineer.Domain\\SteelDesignerEngineer.Domain.csproj": {
+    "C:\\Users\\find\\source\\repos\\otus-pet-project\\OTUS.Pet.Education\\SteelDesignerEngineer.Domain\\SteelDesignerEngineer.Domain.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\find\\Desktop\\Qdrant\\steel-designer-engineer_v2\\SteelDesignerEngineer.Domain\\SteelDesignerEngineer.Domain.csproj",
+        "projectUniqueName": "C:\\Users\\find\\source\\repos\\otus-pet-project\\OTUS.Pet.Education\\SteelDesignerEngineer.Domain\\SteelDesignerEngineer.Domain.csproj",
         "projectName": "SteelDesignerEngineer.Domain",
-        "projectPath": "C:\\Users\\find\\Desktop\\Qdrant\\steel-designer-engineer_v2\\SteelDesignerEngineer.Domain\\SteelDesignerEngineer.Domain.csproj",
+        "projectPath": "C:\\Users\\find\\source\\repos\\otus-pet-project\\OTUS.Pet.Education\\SteelDesignerEngineer.Domain\\SteelDesignerEngineer.Domain.csproj",
         "packagesPath": "C:\\Users\\find\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\find\\Desktop\\Qdrant\\steel-designer-engineer_v2\\SteelDesignerEngineer.Domain\\obj\\",
+        "outputPath": "C:\\Users\\find\\source\\repos\\otus-pet-project\\OTUS.Pet.Education\\SteelDesignerEngineer.Domain\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

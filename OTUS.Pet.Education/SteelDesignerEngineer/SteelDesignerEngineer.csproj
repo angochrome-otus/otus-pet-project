@@ -7,7 +7,6 @@
   <ItemGroup>
 	  <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
 	  <PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />
-	  <PackageReference Include="MongoDB.Driver" Version="2.22.0" />
 	  
 	  <!-- JWT Authentication -->
 	  <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
@@ -16,8 +15,10 @@
     <ProjectReference Include="..\SteelDesignerEngineer.Application\SteelDesignerEngineer.Application.csproj" />
     <ProjectReference Include="..\SteelDesignerEngineer.Domain\SteelDesignerEngineer.Domain.csproj" />
     <ProjectReference Include="..\SteelDesignerEngineer.Infrastructure\SteelDesignerEngineer.Infrastructure.csproj" />
+    <ProjectReference Include="..\SteelDesignerEngineer.Data\SteelDesignerEngineer.Data.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="logs\" />
+    <Folder Include="Middleware\" />
   </ItemGroup>
 </Project>

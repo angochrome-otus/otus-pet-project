@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using SteelDesignerEngineer.Domain.Entities;
 using SteelDesignerEngineer.Domain.Repositories;
+using SteelDesignerEngineer.Domain.Services;
 
 namespace SteelDesignerEngineer.Data.MongoDB;
 
@@ -19,18 +20,33 @@ public class UserRepository : IUserRepository
         _users = database.GetCollection<User>("Users");
         _logger = logger;
         
-        // Создаем индекс на email для быстрого поиска
-        var indexKeysDefinition = Builders<User>.IndexKeys.Ascending(u => u.Email);
-        var indexOptions = new CreateIndexOptions { Unique = true };
-        var indexModel = new CreateIndexModel<User>(indexKeysDefinition, indexOptions);
-        
+        // Создаем индексы
+        CreateIndexes();
+    }
+
+    private void CreateIndexes()
+    {
+        // Уникальный индекс по Email
+        var emailIndexModel = new CreateIndexModel<User>(
+            Builders<User>.IndexKeys.Ascending(u => u.Email),
+            new CreateIndexOptions { Unique = true }
+        );
+
+        // Индекс по AuthProvider + OAuthProviderId
+        var oauthIndexModel = new CreateIndexModel<User>(
+            Builders<User>.IndexKeys
+                .Ascending(u => u.AuthProvider)
+                .Ascending(u => u.OAuthProviderId),
+            new CreateIndexOptions { Unique = false }
+        );
+
         try
         {
-            _users.Indexes.CreateOne(indexModel);
+            _users.Indexes.CreateMany(new[] { emailIndexModel, oauthIndexModel });
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to create unique index on User.Email - it may already exist");
+            _logger.LogWarning(ex, "Failed to create indexes on User collection - they may already exist");
         }
     }
 
@@ -60,10 +76,25 @@ public class UserRepository : IUserRepository
         }
     }
 
+    public async Task<User?> GetByOAuthProviderAsync(string provider, string providerId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await _users.Find(u => u.AuthProvider == provider && u.OAuthProviderId == providerId)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting user by OAuth provider: {Provider}, Id: {ProviderId}", provider, providerId);
+            throw;
+        }
+    }
+
     public async Task<User> CreateAsync(User user, CancellationToken cancellationToken = default)
     {
         try
         {
+            user.Id = global::MongoDB.Bson.ObjectId.GenerateNewId().ToString();
             await _users.InsertOneAsync(user, cancellationToken: cancellationToken);
             _logger.LogInformation("User created: {Email}", user.Email);
             return user;
@@ -75,7 +106,7 @@ public class UserRepository : IUserRepository
         }
     }
 
-    public async Task<User> UpdateAsync(User user, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(User user, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -85,7 +116,6 @@ public class UserRepository : IUserRepository
                 cancellationToken: cancellationToken);
             
             _logger.LogInformation("User updated: {Email}", user.Email);
-            return user;
         }
         catch (Exception ex)
         {

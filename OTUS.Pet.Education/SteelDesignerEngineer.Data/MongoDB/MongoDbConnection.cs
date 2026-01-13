@@ -1,5 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
+using SteelDesignerEngineer.Domain.Services;
 
 namespace SteelDesignerEngineer.Data.MongoDB
 {

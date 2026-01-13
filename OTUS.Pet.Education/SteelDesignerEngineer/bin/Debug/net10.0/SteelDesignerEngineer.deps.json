@@ -9,9 +9,9 @@
       "SteelDesignerEngineer/1.0.0": {
         "dependencies": {
           "Microsoft.AspNetCore.Authentication.JwtBearer": "9.0.0",
-          "MongoDB.Driver": "2.22.0",
           "Serilog.AspNetCore": "9.0.0",
           "SteelDesignerEngineer.Application": "1.0.0",
+          "SteelDesignerEngineer.Data": "1.0.0",
           "SteelDesignerEngineer.Domain": "1.0.0",
           "SteelDesignerEngineer.Infrastructure": "1.0.0",
           "Swashbuckle.AspNetCore": "7.2.0"

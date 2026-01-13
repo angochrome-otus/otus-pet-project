@@ -13,8 +13,22 @@ namespace SteelDesignerEngineer.Domain.Repositories
         Task<PageContent> GetByIdAsync(Guid id);
         Task<PageContent> GetByPageNameAsync(string pageName);
         Task<IEnumerable<PageContent>> GetAllAsync();
+        
+        /// <summary>
+        /// Создание нового содержимого страницы (необходимо, чтобы страница еще не существовала)
+        /// </summary>
         Task<PageContent> CreateAsync(PageContent pageContent);
+        
+        /// <summary>
+        /// Обновление существующего содержимого страницы
+        /// </summary>
         Task<PageContent> UpdateAsync(Guid id, PageContent pageContent);
+        
+        /// <summary>
+        /// Создание или обновление содержимого страницы (операция upsert)
+        /// </summary>
+        Task<PageContent> UpsertAsync(PageContent pageContent);
+        
         Task<bool> DeleteAsync(Guid id);
     }
 }

@@ -1,69 +1,68 @@
 using SteelDesignerEngineer.Domain.Entities;
 using SteelDesignerEngineer.Application.Interfaces;
 using SteelDesignerEngineer.Domain.Services;
+using Microsoft.Extensions.Logging;
 
 namespace SteelDesignerEngineer.Application.Services
 {
+    /// <summary>
+    /// Application service for PageContent operations
+    /// SRP: Coordinates domain services and publishes events
+    /// </summary>
     public class PageContentApplicationService : IPageContentApplicationService
     {
-
         private readonly IPageContentService _pageContentService;
+        private readonly IMessagePublisher _messagePublisher;
+        private readonly ILogger<PageContentApplicationService> _logger;
 
-
-        /// <summary>
-        /// Создание экземпляра
-        /// </summary>
-        /// <param name="pageContentService"></param>
-        /// <param name="messageProducer"></param>
-        public PageContentApplicationService(IPageContentService pageContentService)
+        public PageContentApplicationService(
+            IPageContentService pageContentService,
+            IMessagePublisher messagePublisher,
+            ILogger<PageContentApplicationService> logger)
         {
             _pageContentService = pageContentService;
+            _messagePublisher = messagePublisher;
+            _logger = logger;
         }
         
-        /// <summary>
-        /// Отправляем сообщение в RabbitMQ о запросе данных
-        /// </summary>
-        /// <returns></returns>
         public async Task<IEnumerable<PageContent>> GetAllPageContentAsync()
         {
-            // Отправляем сообщение в RabbitMQ о запросе данных
-            
             return await _pageContentService.GetAllPageContentAsync();
         }
 
-        /// <summary>
-        /// Отправляем сообщение в RabbitMQ о запросе данных для конкретной страницы
-        /// </summary>
-        /// <param name="pageName"></param>
-        /// <returns></returns>
         public async Task<PageContent> GetPageContentByPageNameAsync(string pageName)
         {
-            // Отправляем сообщение в RabbitMQ о запросе данных для конкретной страницы
-            
             return await _pageContentService.GetPageContentByPageNameAsync(pageName);
         }
 
-        /// <summary>
-        /// Отправляем сообщение в RabbitMQ о запросе данных для конкретной страницы по ID
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
         public async Task<PageContent> GetPageContentByIdAsync(Guid id)
         {
-            // Отправляем сообщение в RabbitMQ о запросе данных для конкретной страницы по ID
-            
             return await _pageContentService.GetPageContentByIdAsync(id);
         }
-        /// <summary>
-        /// Отправляем сообщение в RabbitMQ о создании новой страницы
-        /// </summary>
-        /// <param name="pageContent"></param>
-        /// <returns></returns>
+
         public async Task<PageContent> CreatePageContentAsync(PageContent pageContent)
         {
             var created = await _pageContentService.CreatePageContentAsync(pageContent);
 
-            Console.WriteLine("Отправляем сообщение в RabbitMQ о создании новой страницы");
+            // Publish event to message bus
+            try
+            {
+                await _messagePublisher.PublishAsync("page_content_created", new
+                {
+                    created.Id,
+                    created.PageName,
+                    created.Title,
+                    Timestamp = DateTime.UtcNow
+                });
+                
+                _logger.LogInformation("PageContent created and event published: {PageName} (Id: {Id})", 
+                    created.PageName, created.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to publish page_content_created event for {PageName}", created.PageName);
+                // Don't fail the operation if event publishing fails
+            }
             
             return created;
         }
@@ -71,13 +70,46 @@ namespace SteelDesignerEngineer.Application.Services
         public async Task UpdatePageContentAsync(Guid id, PageContent pageContent)
         {
             await _pageContentService.UpdatePageContentAsync(id, pageContent);
-            Console.WriteLine("Отправляем сообщение в RabbitMQ об обновлении страницы");
+
+            // Publish update event
+            try
+            {
+                await _messagePublisher.PublishAsync("page_content_updated", new
+                {
+                    id,
+                    pageContent.PageName,
+                    pageContent.Title,
+                    Timestamp = DateTime.UtcNow
+                });
+                
+                _logger.LogInformation("PageContent updated and event published: {PageName} (Id: {Id})", 
+                    pageContent.PageName, id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to publish page_content_updated event for {PageName}", pageContent.PageName);
+            }
         }
 
         public async Task DeletePageContentAsync(Guid id)
         {
             await _pageContentService.DeletePageContentAsync(id);
-            Console.WriteLine($"Удалена страница с ID: {id}");
+
+            // Publish delete event
+            try
+            {
+                await _messagePublisher.PublishAsync("page_content_deleted", new
+                {
+                    Id = id,
+                    Timestamp = DateTime.UtcNow
+                });
+                
+                _logger.LogInformation("PageContent deleted and event published: {Id}", id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to publish page_content_deleted event for {Id}", id);
+            }
         }
     }
 }

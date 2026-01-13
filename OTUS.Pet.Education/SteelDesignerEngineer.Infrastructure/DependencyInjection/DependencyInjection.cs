@@ -5,23 +5,22 @@ using SteelDesignerEngineer.Infrastructure.Caching;
 using SteelDesignerEngineer.Infrastructure.Configuration;
 using SteelDesignerEngineer.Infrastructure.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using MongoDB.Driver;
-using RabbitMQ.Client;
 using StackExchange.Redis;
 using Microsoft.Extensions.Configuration;
-using SteelDesignerEngineer.Data.MongoDB;
 using SteelDesignerEngineer.Infrastructure.Messaging;
 using SteelDesignerEngineer.Application.Services;
 using SteelDesignerEngineer.Application.Interfaces;
 using Microsoft.Extensions.Logging;
+using SteelDesignerEngineer.Data.DependencyInjection;
 
 namespace SteelDesignerEngineer.Infrastructure.DependencyInjection
 {
     /// <summary>
-    /// Класс для внедрения зависимостей в слое инфраструктуры
-    /// Clean Architecture: Infrastructure Layer - Реализация внешних зависимостей
-    /// SOLID: Dependency Inversion Principle (DIP) - Инверсия зависимостей для внешних систем
-    /// Все внешние зависимости (MongoDB, Redis, RabbitMQ) инкапсулированы
+    /// Clean Architecture: Infrastructure Layer - Configuration of external dependencies
+    /// SOLID: Dependency Inversion Principle (DIP)
+    /// All external dependencies (MongoDB, Redis, RabbitMQ) are encapsulated
     /// </summary>
     public static class DependencyInjection
     {
@@ -29,17 +28,15 @@ namespace SteelDesignerEngineer.Infrastructure.DependencyInjection
             this IServiceCollection services,
             IConfiguration configuration)
         {
-            // Настройки конфигурации
             services.Configure<ConnectionStringsSettings>(
                 configuration.GetSection("ConnectionStrings"));
-            // Use correct section name from appsettings.json
             services.Configure<DatabaseSettings>(
                 configuration.GetSection("DatabaseSettings"));
             services.Configure<CacheSettings>(
                 configuration.GetSection("CacheSettings"));
 
             // ==========================================
-            // MongoDB - подключаемся к существующей базе
+            // MongoDB - Configuration
             // ==========================================
 
             services.AddSingleton<IMongoClient>(sp =>
@@ -56,7 +53,6 @@ namespace SteelDesignerEngineer.Infrastructure.DependencyInjection
             services.AddSingleton<IMongoDatabase>(sp =>
             {
                 var client = sp.GetRequiredService<IMongoClient>();
-                // Read database name from correct configuration section
                 var databaseName = configuration.GetValue<string>("DatabaseSettings:DatabaseName");
                 if (string.IsNullOrWhiteSpace(databaseName))
                 {
@@ -66,11 +62,19 @@ namespace SteelDesignerEngineer.Infrastructure.DependencyInjection
                 return client.GetDatabase(databaseName);
             });
 
-            // Доменная зависимость - DIP
-            services.AddSingleton<IMongoDbConnection, MongoDbConnection>();
+            services.AddSingleton<IMongoDbConnection>(sp =>
+            {
+                var database = sp.GetRequiredService<IMongoDatabase>();
+                var mongoDbConnectionType = Type.GetType("SteelDesignerEngineer.Data.MongoDB.MongoDbConnection, SteelDesignerEngineer.Data");
+                if (mongoDbConnectionType == null)
+                {
+                    throw new InvalidOperationException("Could not find MongoDbConnection type. Make sure SteelDesignerEngineer.Data is referenced in the startup project.");
+                }
+                return (IMongoDbConnection)Activator.CreateInstance(mongoDbConnectionType, database)!;
+            });
 
             // ==========================================
-            // Redis - подключаемся к существующему экземпляру
+            // Redis
             // ==========================================
 
             services.AddSingleton<IConnectionMultiplexer>(sp =>
@@ -84,103 +88,95 @@ namespace SteelDesignerEngineer.Infrastructure.DependencyInjection
                 return ConnectionMultiplexer.Connect(connectionString);
             });
 
-            // Доменная зависимость - DIP
             services.AddSingleton<IRedisConnection, RedisConnection>();
 
             // ==========================================
-            // RabbitMQ - подключаемся к существующему брокеру
+            // RabbitMQ
             // ==========================================
 
-            services.AddSingleton<IConnection>(sp =>
+            services.AddSingleton<Lazy<RabbitMQ.Client.IConnection>>(sp =>
             {
-                var connectionString = configuration.GetConnectionString("RabbitMQ");
-                if (string.IsNullOrWhiteSpace(connectionString))
+                return new Lazy<RabbitMQ.Client.IConnection>(() =>
                 {
-                    throw new InvalidOperationException("RabbitMQ connection string is not configured. Please set 'ConnectionStrings:RabbitMQ' in configuration.");
-                }
+                    var connectionString = configuration.GetConnectionString("RabbitMQ");
+                    if (string.IsNullOrWhiteSpace(connectionString))
+                    {
+                        throw new InvalidOperationException("RabbitMQ connection string is not configured. Please set 'ConnectionStrings:RabbitMQ' in configuration.");
+                    }
 
-                var factory = new ConnectionFactory
-                {
-                    Uri = new Uri(connectionString),
-                    AutomaticRecoveryEnabled = true,
-                    NetworkRecoveryInterval = TimeSpan.FromSeconds(10),
-                    RequestedHeartbeat = TimeSpan.FromSeconds(60)
-                };
+                    var factory = new RabbitMQ.Client.ConnectionFactory
+                    {
+                        Uri = new Uri(connectionString),
+                        AutomaticRecoveryEnabled = true,
+                        NetworkRecoveryInterval = TimeSpan.FromSeconds(10),
+                        RequestedHeartbeat = TimeSpan.FromSeconds(60)
+                    };
 
-                // Создаем подключение к уже развернутому брокеру
-                return factory.CreateConnectionAsync().GetAwaiter().GetResult();
+                    var logger = sp.GetRequiredService<ILogger<RabbitMqConnection>>();
+                    logger.LogInformation("Creating RabbitMQ connection (Lazy Loading)");
+                    
+                    return factory.CreateConnectionAsync().GetAwaiter().GetResult();
+                });
             });
 
-            // Доменная зависимость - DIP
+            // Register actual connection for backwards compatibility
+            services.AddSingleton<RabbitMQ.Client.IConnection>(sp => 
+                sp.GetRequiredService<Lazy<RabbitMQ.Client.IConnection>>().Value);
+
             services.AddSingleton<IRabbitMqConnection, RabbitMqConnection>();
 
             // ==========================================
-            // Domain Services для инфраструктуры - DIP
+            // Domain Services - ISP: Register segregated interfaces
             // ==========================================
 
             services.AddSingleton<ICacheService, RedisCacheService>();
-            services.AddSingleton<IMessageBus, RabbitMqMessageBus>();
-
+            
+            // Register message serializer (OCP)
+            services.AddSingleton<Infrastructure.Messaging.IMessageSerializer, Infrastructure.Messaging.JsonMessageSerializer>();
+            
+            // Register RabbitMqMessageBus as all message-related interfaces
+            services.AddSingleton<RabbitMqMessageBus>();
+            services.AddSingleton<IMessagePublisher>(sp => sp.GetRequiredService<RabbitMqMessageBus>());
+            services.AddSingleton<IMessageConsumer>(sp => sp.GetRequiredService<RabbitMqMessageBus>());
+            services.AddSingleton<IMessageBus>(sp => sp.GetRequiredService<RabbitMqMessageBus>());
+            
             // ==========================================
-            // НОВОЕ: Auth Services - JWT и Password Hashing
+            // Auth Services
             // ==========================================
             
             services.AddSingleton<IJwtTokenService, JwtTokenService>();
             services.AddSingleton<IPasswordHashService, PasswordHashService>();
-            
-            // НОВОЕ: Auth Cache Service - кеширование через Redis
             services.AddSingleton<IAuthCacheService, AuthCacheService>();
+            services.AddSingleton<IOAuthService, OAuthService>();
+            services.AddSingleton<ISessionService, SessionService>();
 
             // ==========================================
-            // Repositories - DIP
+            // OCP: Data layer repositories via extension method
             // ==========================================
-
-            // Register MongoDB repository that implements IPageContentRepository
-            services.AddScoped<IPageContentRepository, PageContentRepository>(sp =>
-            {
-                var database = sp.GetRequiredService<IMongoDatabase>();
-                var logger = sp.GetRequiredService<ILogger<PageContentRepository>>();
-                // use collection name 'PageContent' to match other parts of code
-                return new PageContentRepository(database, "PageContent", logger);
-            });
-
-            // НОВОЕ: User Repository
-            services.AddScoped<IUserRepository, UserRepository>(sp =>
-            {
-                var database = sp.GetRequiredService<IMongoDatabase>();
-                var logger = sp.GetRequiredService<ILogger<UserRepository>>();
-                return new UserRepository(database, logger);
-            });
-
-            // НОВОЕ: RefreshToken Repository - хранение в MongoDB
-            services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>(sp =>
-            {
-                var database = sp.GetRequiredService<IMongoDatabase>();
-                var logger = sp.GetRequiredService<ILogger<RefreshTokenRepository>>();
-                return new RefreshTokenRepository(database, logger);
-            });
+            
+            var tempProvider = services.BuildServiceProvider();
+            var database = tempProvider.GetRequiredService<IMongoDatabase>();
+            services.AddDataLayer(database);
 
             // Domain Services
             services.AddScoped<IPageContentService, PageContentService>();
+
+            // HttpClient for OAuth
+            services.AddHttpClient<IOAuthService, OAuthService>();
 
             return services;
         }
 
         public static IServiceCollection AddApplication(this IServiceCollection services)
         {
-            // Application Services
             services.AddScoped<IPageContentApplicationService, PageContentApplicationService>();
-            
-            // НОВОЕ: Auth Application Service
             services.AddScoped<IAuthApplicationService, AuthApplicationService>();
 
             return services;
         }
 
-        // AddDomain extension to satisfy Program.cs call. No-op or register domain-specific services here.
         public static IServiceCollection AddDomain(this IServiceCollection services)
         {
-            // Domain layer typically contains interfaces and domain services. Register domain-level services if needed.
             return services;
         }
     }

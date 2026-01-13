@@ -1,9 +1,15 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Личный кабинет — Steel Designer Engineer</title>
+    <title>Profile - Steel Designer Engineer</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="alternate icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.svg">
+    
     <style>
         :root{
             --primary-1: #667eea;
@@ -27,6 +33,10 @@
         .avatar{width:80px; height:80px; border-radius:50%; background:linear-gradient(135deg, var(--primary-1), var(--primary-2)); display:inline-flex; align-items:center; justify-content:center; font-size:36px; margin-bottom:12px;}
         .user-name{font-size:18px; font-weight:700; margin-bottom:4px;}
         .user-email{font-size:14px; color:var(--muted);}
+        .user-role{display:inline-block; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:600; margin-top:8px;}
+        .role-student{background:#d4edda; color:#155724;}
+        .role-teacher{background:#fff3cd; color:#856404;}
+        .role-admin{background:#f8d7da; color:#721c24;}
         
         .menu{list-style:none;}
         .menu li{margin-bottom:8px;}
@@ -43,6 +53,10 @@
         .btn{padding:10px 20px; border:none; border-radius:8px; font-weight:600; cursor:pointer; text-decoration:none; display:inline-block; transition:all 0.3s;}
         .btn-logout{background:rgba(255,255,255,0.2); color:white; border:2px solid rgba(255,255,255,0.3);}
         .btn-logout:hover{background:rgba(255,255,255,0.3);}
+        .btn-logout:disabled{opacity:0.5; cursor:not-allowed;}
+        
+        .alert{padding:12px; border-radius:8px; margin-bottom:20px; display:none;}
+        .alert-info{background:#d1ecf1; color:#0c5460; border:1px solid #bee5eb;}
         
         .stats-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:20px; margin-bottom:30px;}
         .stat-card{background:white; border-radius:16px; padding:24px; box-shadow:0 4px 15px rgba(0,0,0,0.1); transition:transform 0.3s;}
@@ -58,29 +72,6 @@
         .card{background:white; border-radius:16px; padding:28px; box-shadow:0 4px 15px rgba(0,0,0,0.1); margin-bottom:20px;}
         .card-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-bottom:16px; border-bottom:2px solid #f0f0f0;}
         .card-header h3{font-size:20px; color:#333;}
-        .badge{padding:6px 12px; border-radius:6px; font-size:12px; font-weight:600;}
-        .badge-success{background:#d4edda; color:#155724;}
-        .badge-warning{background:#fff3cd; color:#856404;}
-        .badge-danger{background:#f8d7da; color:#721c24;}
-        .badge-info{background:#d1ecf1; color:#0c5460;}
-        
-        .course-list{list-style:none;}
-        .course-item{display:flex; align-items:center; gap:16px; padding:16px; border-radius:10px; margin-bottom:12px; transition:background 0.3s;}
-        .course-item:hover{background:#f8f9fa;}
-        .course-icon{width:60px; height:60px; border-radius:10px; background:linear-gradient(135deg, var(--primary-1), var(--primary-2)); display:flex; align-items:center; justify-content:center; font-size:28px;}
-        .course-info{flex:1;}
-        .course-title{font-weight:600; margin-bottom:4px;}
-        .course-progress{color:var(--muted); font-size:14px;}
-        .progress-bar{width:100%; height:8px; background:#e0e0e0; border-radius:4px; margin-top:8px; overflow:hidden;}
-        .progress-fill{height:100%; background:linear-gradient(90deg, var(--primary-1), var(--primary-2)); transition:width 0.5s;}
-        
-        .activity-list{list-style:none;}
-        .activity-item{display:flex; gap:16px; padding:16px 0; border-bottom:1px solid #e0e0e0;}
-        .activity-item:last-child{border-bottom:none;}
-        .activity-icon{width:40px; height:40px; border-radius:50%; background:#f0f0f0; display:flex; align-items:center; justify-content:center; font-size:18px;}
-        .activity-content{flex:1;}
-        .activity-title{font-weight:600; margin-bottom:4px;}
-        .activity-time{color:var(--muted); font-size:13px;}
         
         @media (max-width:768px){
             .dashboard{flex-direction:column;}
@@ -94,19 +85,17 @@
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <div class="avatar">?????</div>
-                <div class="user-name" id="userName">Загрузка...</div>
-                <div class="user-email" id="userEmail">Загрузка...</div>
+                <div class="avatar">рџ‘¤</div>
+                <div class="user-name" id="userName">Loading...</div>
+                <div class="user-email" id="userEmail">Loading...</div>
+                <span class="user-role" id="userRole"></span>
             </div>
             
             <ul class="menu">
-                <li><a href="#" class="active" onclick="showSection('dashboard'); return false;"><span class="menu-icon">??</span> Панель управления</a></li>
-                <li><a href="#" onclick="showSection('courses'); return false;"><span class="menu-icon">??</span> Мои курсы</a></li>
-                <li><a href="#" onclick="showSection('progress'); return false;"><span class="menu-icon">??</span> Прогресс</a></li>
-                <li><a href="#" onclick="showSection('certificates'); return false;"><span class="menu-icon">??</span> Сертификаты</a></li>
-                <li><a href="#" onclick="showSection('settings'); return false;"><span class="menu-icon">??</span> Настройки</a></li>
-                <li><a href="/swagger"><span class="menu-icon">??</span> API Документация</a></li>
-                <li><a href="#" onclick="logout(); return false;"><span class="menu-icon">??</span> Выход</a></li>
+                <li><a href="#" class="active"><span class="menu-icon">рџ“Љ</span> Dashboard</a></li>
+                <li><a href="/"><span class="menu-icon">рџ“љ</span> My Courses</a></li>
+                <li><a href="/swagger"><span class="menu-icon">рџ”§</span> API Docs</a></li>
+                <li><a href="#" onclick="logout(); return false;"><span class="menu-icon">рџљЄ</span> Logout</a></li>
             </ul>
         </aside>
 
@@ -114,163 +103,149 @@
         <main class="main-content">
             <div class="container">
                 <div class="header">
-                    <h1>Панель управления</h1>
-                    <button class="btn btn-logout" onclick="logout()">Выйти</button>
+                    <h1>User Profile</h1>
+                    <button class="btn btn-logout" id="logoutBtn" onclick="logout()">Logout</button>
                 </div>
+
+                <div id="alert" class="alert alert-info"></div>
 
                 <!-- Stats -->
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-icon success">??</div>
-                        <div class="stat-value">3</div>
-                        <div class="stat-label">Активных курса</div>
+                        <div class="stat-icon success">вњ…</div>
+                        <div class="stat-value" id="enrolledCourses">-</div>
+                        <div class="stat-label">Active Courses</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon warning">??</div>
-                        <div class="stat-value">42ч</div>
-                        <div class="stat-label">Времени обучения</div>
+                        <div class="stat-icon warning">рџЏ†</div>
+                        <div class="stat-value" id="completedCourses">-</div>
+                        <div class="stat-label">Completed Courses</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon info">??</div>
-                        <div class="stat-value">2</div>
-                        <div class="stat-label">Сертификата</div>
+                        <div class="stat-icon info">рџ“…</div>
+                        <div class="stat-value" id="memberSince">-</div>
+                        <div class="stat-label">Member Since</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon primary">??</div>
-                        <div class="stat-value">68%</div>
-                        <div class="stat-label">Средний прогресс</div>
+                        <div class="stat-icon primary">рџ•ђ</div>
+                        <div class="stat-value" id="lastLogin">-</div>
+                        <div class="stat-label">Last Login</div>
                     </div>
                 </div>
 
-                <!-- Current Courses -->
+                <!-- User Info Card -->
                 <div class="card">
                     <div class="card-header">
-                        <h3>Текущие курсы</h3>
-                        <a href="/" class="btn btn-primary" style="background:linear-gradient(135deg, var(--primary-1), var(--primary-2)); color:white; font-size:14px; padding:8px 16px;">Найти курсы</a>
+                        <h3>User Information</h3>
                     </div>
-                    <ul class="course-list">
-                        <li class="course-item">
-                            <div class="course-icon">??</div>
-                            <div class="course-info">
-                                <div class="course-title">Основы проектирования стальных конструкций</div>
-                                <div class="course-progress">Урок 12 из 24 • 50% завершено</div>
-                                <div class="progress-bar">
-                                    <div class="progress-fill" style="width:50%"></div>
-                                </div>
-                            </div>
-                            <span class="badge badge-success">Активен</span>
-                        </li>
-                        <li class="course-item">
-                            <div class="course-icon">???</div>
-                            <div class="course-info">
-                                <div class="course-title">Расчет балок и колонн</div>
-                                <div class="course-progress">Урок 28 из 36 • 78% завершено</div>
-                                <div class="progress-bar">
-                                    <div class="progress-fill" style="width:78%"></div>
-                                </div>
-                            </div>
-                            <span class="badge badge-success">Активен</span>
-                        </li>
-                        <li class="course-item">
-                            <div class="course-icon">??</div>
-                            <div class="course-info">
-                                <div class="course-title">Автоматизация расчетов через API</div>
-                                <div class="course-progress">Урок 11 из 16 • 69% завершено</div>
-                                <div class="progress-bar">
-                                    <div class="progress-fill" style="width:69%"></div>
-                                </div>
-                            </div>
-                            <span class="badge badge-warning">В процессе</span>
-                        </li>
-                    </ul>
-                </div>
-
-                <!-- Recent Activity -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3>Последняя активность</h3>
-                    </div>
-                    <ul class="activity-list">
-                        <li class="activity-item">
-                            <div class="activity-icon">?</div>
-                            <div class="activity-content">
-                                <div class="activity-title">Завершен урок "Расчет прочности колонн"</div>
-                                <div class="activity-time">2 часа назад</div>
-                            </div>
-                        </li>
-                        <li class="activity-item">
-                            <div class="activity-icon">??</div>
-                            <div class="activity-content">
-                                <div class="activity-title">Получен сертификат "Основы проектирования"</div>
-                                <div class="activity-time">1 день назад</div>
-                            </div>
-                        </li>
-                        <li class="activity-item">
-                            <div class="activity-icon">??</div>
-                            <div class="activity-content">
-                                <div class="activity-title">Пройден тест по теме "Нагрузки на конструкции"</div>
-                                <div class="activity-time">3 дня назад</div>
-                            </div>
-                        </li>
-                        <li class="activity-item">
-                            <div class="activity-icon">??</div>
-                            <div class="activity-content">
-                                <div class="activity-title">Начат курс "Автоматизация расчетов через API"</div>
-                                <div class="activity-time">1 неделю назад</div>
-                            </div>
-                        </li>
-                    </ul>
+                    <p><strong>ID:</strong> <span id="userId">-</span></p>
+                    <p><strong>Email:</strong> <span id="userEmailFull">-</span></p>
+                    <p><strong>First Name:</strong> <span id="userFirstName">-</span></p>
+                    <p><strong>Last Name:</strong> <span id="userLastName">-</span></p>
+                    <p><strong>Role:</strong> <span id="userRoleFull">-</span></p>
                 </div>
             </div>
         </main>
     </div>
 
     <script>
-        // Проверка авторизации
-        if (localStorage.getItem('isAuthenticated') !== 'true') {
-            window.location.href = 'login.html';
+        const API_URL = window.location.origin;
+        const alertBox = document.getElementById('alert');
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        function showAlert(message) {
+            alertBox.textContent = message;
+            alertBox.style.display = 'block';
+            setTimeout(() => {
+                alertBox.style.display = 'none';
+            }, 5000);
         }
 
-        // Загрузка данных пользователя с правильной декодировкой
-        const userEmail = localStorage.getItem('userEmail') || 'user@example.com';
-        const userName = localStorage.getItem('userName') 
-            ? decodeURIComponent(localStorage.getItem('userName')) 
-            : 'Пользователь';
+        // Load user data from API (session-based)
+        async function loadUserData() {
+            try {
+                console.log('Loading user data...'); // Debug log
+                
+                const response = await fetch(`${API_URL}/api/Auth/me`, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
 
-        document.getElementById('userName').textContent = userName;
-        document.getElementById('userEmail').textContent = userEmail;
+                console.log('Response status:', response.status); // Debug log
 
-        function showSection(section) {
-            const sectionNames = {
-                'dashboard': 'Панель управления',
-                'courses': 'Мои курсы',
-                'progress': 'Прогресс',
-                'certificates': 'Сертификаты',
-                'settings': 'Настройки'
-            };
-            alert('Переход к разделу: ' + (sectionNames[section] || section) + '.\nФункционал будет реализован позже.');
-            // Здесь можно добавить логику переключения разделов
-        }
-
-        function logout() {
-            if (confirm('Вы уверены, что хотите выйти?')) {
-                localStorage.removeItem('isAuthenticated');
-                localStorage.removeItem('userEmail');
-                localStorage.removeItem('userName');
-                window.location.href = 'login.html';
+                if (response.ok) {
+                    const user = await response.json();
+                    console.log('User loaded:', user); // Debug log
+                    
+                    // Redirect to role-specific dashboard
+                    const dashboard = getRoleBasedDashboard(user.role);
+                    console.log('Redirecting to:', dashboard);
+                    window.location.href = dashboard;
+                    
+                } else if (response.status === 401) {
+                    // Session expired or not authenticated
+                    console.warn('Not authenticated, redirecting to login...'); // Debug log
+                    showAlert('вљ пёЏ Session expired. Please login again.');
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 1500);
+                } else {
+                    showAlert('вќЊ Error loading user data');
+                    console.error('Error response:', response.status, response.statusText);
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                showAlert('вќЊ Server connection error');
+                // Don't redirect on network error - might be temporary
             }
         }
 
-        // Обновление прогресса с анимацией
-        window.addEventListener('load', () => {
-            document.querySelectorAll('.progress-fill').forEach(bar => {
-                const width = bar.style.width;
-                bar.style.width = '0%';
+        function getRoleBasedDashboard(role) {
+            switch(role) {
+                case 'Student': return 'student-dashboard.html';
+                case 'Teacher': return 'teacher-dashboard.html';
+                case 'Admin': return 'admin-dashboard.html';
+                default: return 'student-dashboard.html';
+            }
+        }
+
+        // Logout function with API call
+        async function logout() {
+            if (!confirm('Are you sure you want to logout?')) {
+                return;
+            }
+
+            logoutBtn.disabled = true;
+            logoutBtn.textContent = 'Logging out...';
+
+            try {
+                const response = await fetch(`${API_URL}/api/Auth/logout`, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    showAlert('вњ… Successfully logged out');
+                } else {
+                    console.error('Logout API call failed');
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+            } finally {
+                // Clear any localStorage
+                localStorage.clear();
+                
+                // Redirect to login
                 setTimeout(() => {
-                    bar.style.width = width;
-                }, 100);
-            });
-        });
+                    window.location.href = 'login.html';
+                }, 500);
+            }
+        }
+
+        // Load data on page load (with delay to prevent race condition)
+        setTimeout(() => {
+            loadUserData();
+        }, 100);
     </script>
 </body>
 </html>

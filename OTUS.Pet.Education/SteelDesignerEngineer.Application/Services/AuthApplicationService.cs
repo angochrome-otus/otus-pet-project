@@ -8,158 +8,255 @@ using SteelDesignerEngineer.Domain.Services;
 namespace SteelDesignerEngineer.Application.Services;
 
 /// <summary>
-/// Application Service для авторизации - координирует Domain Services
+/// Application Service для авторизации - Session-based authentication
 /// Clean Architecture: Application Layer
-/// MongoDB - источник истины, Redis - кеш для производительности
+/// MongoDB - источник истины, Redis - сессии и кеш
 /// </summary>
 public class AuthApplicationService : IAuthApplicationService
 {
     private readonly IUserRepository _userRepository;
-    private readonly IRefreshTokenRepository _refreshTokenRepository;
-    private readonly IJwtTokenService _jwtTokenService;
     private readonly IPasswordHashService _passwordHashService;
     private readonly IAuthCacheService _authCacheService;
+    private readonly IOAuthService _oauthService;
     private readonly ILogger<AuthApplicationService> _logger;
 
-    private const int MaxLoginAttempts = 5; // Максимум попыток входа за 15 минут
+    private const int MaxLoginAttempts = 5;
 
     public AuthApplicationService(
         IUserRepository userRepository,
-        IRefreshTokenRepository refreshTokenRepository,
-        IJwtTokenService jwtTokenService,
         IPasswordHashService passwordHashService,
         IAuthCacheService authCacheService,
+        IOAuthService oauthService,
         ILogger<AuthApplicationService> logger)
     {
         _userRepository = userRepository;
-        _refreshTokenRepository = refreshTokenRepository;
-        _jwtTokenService = jwtTokenService;
         _passwordHashService = passwordHashService;
         _authCacheService = authCacheService;
+        _oauthService = oauthService;
         _logger = logger;
     }
 
     public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
     {
+        return await LoginAsync(request, null, cancellationToken);
+    }
+
+    public async Task<LoginResponse> LoginAsync(LoginRequest request, string? ipAddress, CancellationToken cancellationToken = default)
+    {
         try
         {
-            // 0. Rate limiting - проверка попыток входа в Redis
+            // Rate limiting
             var attempts = await _authCacheService.GetLoginAttemptsCountAsync(request.Email, cancellationToken);
             if (attempts >= MaxLoginAttempts)
             {
                 _logger.LogWarning("Too many login attempts for {Email}: {Attempts}", request.Email, attempts);
-                return new LoginResponse(false, null, null, $"Слишком много попыток входа. Попробуйте через 15 минут.", null);
+                return new LoginResponse(false, $"Слишком много попыток входа. Попробуйте через 15 минут.", null);
             }
 
-            // 1. Найти пользователя в MongoDB (источник истины!)
+            // Find user in MongoDB
             var user = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
             if (user == null || !user.IsActive)
             {
                 await _authCacheService.RecordLoginAttemptAsync(request.Email, cancellationToken);
-                _logger.LogWarning("Login attempt failed: User not found or inactive - {Email}", request.Email);
-                return new LoginResponse(false, null, null, "Неверный email или пароль", null);
+                _logger.LogWarning("Login failed: User not found or inactive - {Email}", request.Email);
+                return new LoginResponse(false, "Неверный email или пароль", null);
             }
 
-            // 2. Проверить пароль (хеш из MongoDB)
-            if (!_passwordHashService.VerifyPassword(request.Password, user.PasswordHash))
+            // Check if OAuth user trying to login with password
+            if (user.AuthProvider != "local")
+            {
+                _logger.LogWarning("OAuth user {Email} trying to login with password", request.Email);
+                return new LoginResponse(false, $"Используйте вход через {user.AuthProvider}", null);
+            }
+
+            // Verify password
+            if (string.IsNullOrEmpty(user.PasswordHash) || !_passwordHashService.VerifyPassword(request.Password, user.PasswordHash))
             {
                 await _authCacheService.RecordLoginAttemptAsync(request.Email, cancellationToken);
-                _logger.LogWarning("Login attempt failed: Invalid password - {Email}", request.Email);
-                return new LoginResponse(false, null, null, "Неверный email или пароль", null);
+                _logger.LogWarning("Login failed: Invalid password - {Email}", request.Email);
+                return new LoginResponse(false, "Неверный email или пароль", null);
             }
 
-            // 3. Успешный вход - сбросить счетчик попыток в Redis
+            // Success - reset attempts
             await _authCacheService.ResetLoginAttemptsAsync(request.Email, cancellationToken);
 
-            // 4. Обновить lastLogin в MongoDB
-            user.LastLogin = DateTime.UtcNow;
+            // Update lastLoginAt and IP in MongoDB
+            user.LastLoginAt = DateTime.UtcNow;
+            user.LastLoginIp = ipAddress;
             await _userRepository.UpdateAsync(user, cancellationToken);
 
-            // 5. Генерировать JWT токен (НЕ сохраняется в БД)
-            var token = _jwtTokenService.GenerateAccessToken(user);
-            
-            // 6. Генерировать и СОХРАНИТЬ Refresh токен в MongoDB
-            var refreshTokenValue = _jwtTokenService.GenerateRefreshToken();
-            var refreshToken = new RefreshToken
-            {
-                Token = refreshTokenValue,
-                UserId = user.Id,
-                ExpiresAt = DateTime.UtcNow.AddDays(30), // 30 дней
-                CreatedAt = DateTime.UtcNow
-            };
-            await _refreshTokenRepository.CreateAsync(refreshToken, cancellationToken);
-
-            // 7. Кешировать Refresh Token в Redis для быстрой проверки
-            await _authCacheService.CacheRefreshTokenAsync(
-                refreshTokenValue, 
-                user.Id, 
-                TimeSpan.FromDays(30), 
-                cancellationToken);
-
-            // 8. Кешировать User в Redis для быстрого доступа
+            // Cache user in Redis
             await _authCacheService.CacheUserAsync(user, cancellationToken);
 
-            // 9. Вернуть результат
             var userDto = MapToDto(user);
             _logger.LogInformation("User logged in successfully: {Email}", request.Email);
             
-            return new LoginResponse(true, token, refreshTokenValue, "Успешный вход", userDto);
+            return new LoginResponse(true, "Успешный вход", userDto);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during login for email: {Email}", request.Email);
-            return new LoginResponse(false, null, null, "Ошибка авторизации", null);
+            return new LoginResponse(false, "Ошибка авторизации", null);
         }
     }
 
     public async Task<RegisterResponse> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
+        return await RegisterAsync(request, null, cancellationToken);
+    }
+
+    public async Task<RegisterResponse> RegisterAsync(RegisterRequest request, string? ipAddress, CancellationToken cancellationToken = default)
+    {
         try
         {
-            // 1. Валидация
             if (request.Password != request.ConfirmPassword)
             {
-                return new RegisterResponse(false, null, "Пароли не совпадают", null);
+                return new RegisterResponse(false, "Пароли не совпадают", null);
             }
 
-            // 2. Проверить что email не занят в MongoDB
             var exists = await _userRepository.ExistsAsync(request.Email, cancellationToken);
             if (exists)
             {
-                _logger.LogWarning("Registration attempt failed: Email already exists - {Email}", request.Email);
-                return new RegisterResponse(false, null, "Email уже используется", null);
+                _logger.LogWarning("Registration failed: Email already exists - {Email}", request.Email);
+                return new RegisterResponse(false, "Email уже используется", null);
             }
 
-            // 3. Создать пользователя и СОХРАНИТЬ в MongoDB (источник истины!)
-            var user = new User
+            // Create user based on role
+            User user = request.Role.ToLower() switch
             {
-                Email = request.Email,
-                PasswordHash = _passwordHashService.HashPassword(request.Password),
-                FirstName = request.FirstName,
-                LastName = request.LastName,
-                CreatedAt = DateTime.UtcNow,
-                IsActive = true,
-                Role = "Student" // По умолчанию Student
+                "teacher" => new Teacher
+                {
+                    Email = request.Email,
+                    PasswordHash = _passwordHashService.HashPassword(request.Password),
+                    FirstName = request.FirstName,
+                    LastName = request.LastName,
+                    CreatedAt = DateTime.UtcNow,
+                    LastLoginAt = DateTime.UtcNow,
+                    LastLoginIp = ipAddress,
+                    IsActive = true,
+                    AuthProvider = "local",
+                    TeachingCourses = new List<string>()
+                },
+                "admin" => new Admin
+                {
+                    Email = request.Email,
+                    PasswordHash = _passwordHashService.HashPassword(request.Password),
+                    FirstName = request.FirstName,
+                    LastName = request.LastName,
+                    CreatedAt = DateTime.UtcNow,
+                    LastLoginAt = DateTime.UtcNow,
+                    LastLoginIp = ipAddress,
+                    IsActive = true,
+                    AuthProvider = "local",
+                    Permissions = new List<string> { "ManageUsers", "ManageCourses", "ViewReports", "SystemSettings" }
+                },
+                _ => new Student // Default to Student
+                {
+                    Email = request.Email,
+                    PasswordHash = _passwordHashService.HashPassword(request.Password),
+                    FirstName = request.FirstName,
+                    LastName = request.LastName,
+                    CreatedAt = DateTime.UtcNow,
+                    LastLoginAt = DateTime.UtcNow,
+                    LastLoginIp = ipAddress,
+                    IsActive = true,
+                    AuthProvider = "local",
+                    EnrolledCourses = new List<string>(),
+                    CompletedCourses = new List<string>()
+                }
             };
 
             user = await _userRepository.CreateAsync(user, cancellationToken);
 
-            // 4. Кешировать User в Redis
+            // Cache in Redis
             await _authCacheService.CacheUserAsync(user, cancellationToken);
 
-            // 5. Генерировать JWT токен (НЕ сохраняется в БД)
-            var token = _jwtTokenService.GenerateAccessToken(user);
-
-            // 6. Вернуть результат
             var userDto = MapToDto(user);
-            _logger.LogInformation("User registered successfully: {Email}", request.Email);
+            _logger.LogInformation("User registered successfully: {Email} as {Role}", request.Email, user.Role);
             
-            return new RegisterResponse(true, token, "Регистрация успешна", userDto);
+            return new RegisterResponse(true, "Регистрация успешна", userDto);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during registration for email: {Email}", request.Email);
-            return new RegisterResponse(false, null, "Ошибка регистрации", null);
+            return new RegisterResponse(false, "Ошибка регистрации", null);
+        }
+    }
+
+    public async Task<OAuthLoginResponse> OAuthLoginAsync(OAuthUserInfo oauthUser, CancellationToken cancellationToken = default)
+    {
+        return await OAuthLoginAsync(oauthUser, null, cancellationToken);
+    }
+
+    public async Task<OAuthLoginResponse> OAuthLoginAsync(OAuthUserInfo oauthUser, string? ipAddress, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var user = await _userRepository.GetByOAuthProviderAsync(oauthUser.Provider, oauthUser.ProviderId, cancellationToken)
+                ?? await _userRepository.GetByEmailAsync(oauthUser.Email, cancellationToken);
+
+            bool isNewUser = false;
+
+            if (user == null)
+            {
+                // Create Student by default for OAuth users
+                user = new Student
+                {
+                    Email = oauthUser.Email,
+                    FirstName = oauthUser.FirstName,
+                    LastName = oauthUser.LastName,
+                    AuthProvider = oauthUser.Provider,
+                    OAuthProviderId = oauthUser.ProviderId,
+                    AvatarUrl = oauthUser.AvatarUrl,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    LastLoginAt = DateTime.UtcNow,
+                    LastLoginIp = ipAddress,
+                    EnrolledCourses = new List<string>(),
+                    CompletedCourses = new List<string>()
+                };
+
+                user = await _userRepository.CreateAsync(user, cancellationToken);
+                isNewUser = true;
+                
+                _logger.LogInformation("New OAuth user registered: {Email} via {Provider}", oauthUser.Email, oauthUser.Provider);
+            }
+            else
+            {
+                if (user.AuthProvider != oauthUser.Provider || user.OAuthProviderId != oauthUser.ProviderId)
+                {
+                    user.AuthProvider = oauthUser.Provider;
+                    user.OAuthProviderId = oauthUser.ProviderId;
+                }
+
+                if (!string.IsNullOrEmpty(oauthUser.AvatarUrl))
+                {
+                    user.AvatarUrl = oauthUser.AvatarUrl;
+                }
+
+                user.LastLoginAt = DateTime.UtcNow;
+                user.LastLoginIp = ipAddress;
+                await _userRepository.UpdateAsync(user, cancellationToken);
+                
+                _logger.LogInformation("OAuth user logged in: {Email} via {Provider}", oauthUser.Email, oauthUser.Provider);
+            }
+
+            // Cache in Redis
+            await _authCacheService.CacheUserAsync(user, cancellationToken);
+
+            var userDto = MapToDto(user);
+            
+            return new OAuthLoginResponse(
+                true,
+                isNewUser ? "Регистрация через OAuth успешна" : "Вход через OAuth успешен",
+                userDto,
+                isNewUser
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during OAuth login for email: {Email}", oauthUser.Email);
+            return new OAuthLoginResponse(false, "Ошибка OAuth авторизации", null, false);
         }
     }
 
@@ -167,7 +264,7 @@ public class AuthApplicationService : IAuthApplicationService
     {
         try
         {
-            // 1. Попытка получить из Redis кеша (быстро!)
+            // Try Redis cache first
             var cachedUser = await _authCacheService.GetCachedUserAsync(userId, cancellationToken);
             if (cachedUser != null)
             {
@@ -175,14 +272,14 @@ public class AuthApplicationService : IAuthApplicationService
                 return MapToDto(cachedUser);
             }
 
-            // 2. Получить из MongoDB (медленнее)
+            // Fallback to MongoDB
             var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
             if (user == null)
             {
                 return null;
             }
 
-            // 3. Обновить кеш в Redis
+            // Update cache
             await _authCacheService.CacheUserAsync(user, cancellationToken);
 
             return MapToDto(user);
@@ -198,7 +295,6 @@ public class AuthApplicationService : IAuthApplicationService
     {
         try
         {
-            // Получить из MongoDB
             var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
             if (user == null)
             {
@@ -208,13 +304,12 @@ public class AuthApplicationService : IAuthApplicationService
             user.FirstName = request.FirstName;
             user.LastName = request.LastName;
 
-            // Сохранить в MongoDB
             await _userRepository.UpdateAsync(user, cancellationToken);
 
-            // Инвалидировать кеш в Redis
+            // Invalidate cache
             await _authCacheService.InvalidateUserCacheAsync(userId, cancellationToken);
             
-            _logger.LogInformation("User profile updated in MongoDB: {UserId}", userId);
+            _logger.LogInformation("User profile updated: {UserId}", userId);
             return MapToDto(user);
         }
         catch (Exception ex)
@@ -233,28 +328,31 @@ public class AuthApplicationService : IAuthApplicationService
                 return false;
             }
 
-            // Получить из MongoDB
             var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
             if (user == null)
             {
                 return false;
             }
 
-            // Проверить текущий пароль
-            if (!_passwordHashService.VerifyPassword(request.CurrentPassword, user.PasswordHash))
+            if (user.AuthProvider != "local")
+            {
+                _logger.LogWarning("OAuth user {UserId} trying to change password", userId);
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(user.PasswordHash) || !_passwordHashService.VerifyPassword(request.CurrentPassword, user.PasswordHash))
             {
                 _logger.LogWarning("Change password failed: Invalid current password - {UserId}", userId);
                 return false;
             }
 
-            // Обновить пароль и СОХРАНИТЬ в MongoDB
             user.PasswordHash = _passwordHashService.HashPassword(request.NewPassword);
             await _userRepository.UpdateAsync(user, cancellationToken);
 
-            // Инвалидировать кеш в Redis
+            // Invalidate cache
             await _authCacheService.InvalidateUserCacheAsync(userId, cancellationToken);
             
-            _logger.LogInformation("User password changed in MongoDB: {UserId}", userId);
+            _logger.LogInformation("User password changed: {UserId}", userId);
             return true;
         }
         catch (Exception ex)
@@ -266,16 +364,48 @@ public class AuthApplicationService : IAuthApplicationService
 
     private UserDto MapToDto(User user)
     {
-        return new UserDto(
+        var baseDto = new UserDto(
             user.Id,
             user.Email,
             user.FirstName,
             user.LastName,
             user.Role,
             user.CreatedAt,
-            user.LastLogin,
-            user.EnrolledCourses.Count,
-            user.CompletedCourses.Count
-        );
+            user.LastLoginAt,
+            0, // Will be overridden for Student
+            0  // Will be overridden for Student
+        )
+        {
+            AuthProvider = user.AuthProvider,
+            AvatarUrl = user.AvatarUrl,
+            LastLoginIp = user.LastLoginIp
+        };
+
+        // Add role-specific properties
+        return user switch
+        {
+            Student student => baseDto with
+            {
+                EnrolledCourses = student.EnrolledCourses,
+                CompletedCourses = student.CompletedCourses,
+                EnrolledCoursesCount = student.EnrolledCourses.Count,
+                CompletedCoursesCount = student.CompletedCourses.Count,
+                CurrentSemester = student.CurrentSemester,
+                StudentIdNumber = student.StudentIdNumber
+            },
+            Teacher teacher => baseDto with
+            {
+                TeachingCourses = teacher.TeachingCourses,
+                Specialization = teacher.Specialization,
+                AcademicTitle = teacher.AcademicTitle,
+                Bio = teacher.Bio
+            },
+            Admin admin => baseDto with
+            {
+                Permissions = admin.Permissions,
+                Notes = admin.Notes
+            },
+            _ => baseDto
+        };
     }
 }

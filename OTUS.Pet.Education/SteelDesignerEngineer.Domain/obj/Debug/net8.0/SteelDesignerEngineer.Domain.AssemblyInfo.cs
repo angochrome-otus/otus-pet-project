@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SteelDesignerEngineer.Domain")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e304784ba2b100b799e0a40ec9b547948da469b2")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7202b6143080a28e1cd124f2db3ce2364948e37b")]
 [assembly: System.Reflection.AssemblyProductAttribute("SteelDesignerEngineer.Domain")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SteelDesignerEngineer.Domain")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

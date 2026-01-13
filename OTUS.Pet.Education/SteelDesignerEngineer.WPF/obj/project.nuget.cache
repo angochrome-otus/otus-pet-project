@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "rhLPcTLUYqc=",
+  "dgSpecHash": "DUCINwc2UwE=",
   "success": true,
-  "projectFilePath": "C:\\Users\\find\\Desktop\\Qdrant\\steel-designer-engineer_v2\\SteelDesignerEngineer.WPF\\SteelDesignerEngineer.WPF.csproj",
+  "projectFilePath": "C:\\Users\\find\\source\\repos\\otus-pet-project\\OTUS.Pet.Education\\SteelDesignerEngineer.WPF\\SteelDesignerEngineer.WPF.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\find\\.nuget\\packages\\avalonedit\\6.3.0.90\\avalonedit.6.3.0.90.nupkg.sha512",
     "C:\\Users\\find\\.nuget\\packages\\extended.wpf.toolkit\\4.6.1\\extended.wpf.toolkit.4.6.1.nupkg.sha512",
