@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SteelDesignerEngineer")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7202b6143080a28e1cd124f2db3ce2364948e37b")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bc84d8e6c2ac34c31247a2bb2fad6460b67190b2")]
 [assembly: System.Reflection.AssemblyProductAttribute("SteelDesignerEngineer")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SteelDesignerEngineer")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
