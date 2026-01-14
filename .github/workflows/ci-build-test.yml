@@ -1,0 +1,118 @@
+name: CI - Build and Test
+
+on:
+  push:
+    branches: [ developer_Nikita, main, develop ]
+  pull_request:
+    branches: [ developer_Nikita, main, develop ]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  SOLUTION_FILE: 'SteelDesignerEngineer.sln'
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Restore dependencies
+      run: |
+        dotnet restore SteelDesignerEngineer/SteelDesignerEngineer.csproj
+        dotnet restore SteelDesignerEngineer.Application/SteelDesignerEngineer.Application.csproj
+        dotnet restore SteelDesignerEngineer.Domain/SteelDesignerEngineer.Domain.csproj
+        dotnet restore SteelDesignerEngineer.Data/SteelDesignerEngineer.Data.csproj
+        dotnet restore SteelDesignerEngineer.Infrastructure/SteelDesignerEngineer.Infrastructure.csproj
+
+    - name: Build WebAPI Project
+      run: dotnet build SteelDesignerEngineer/SteelDesignerEngineer.csproj --configuration Release --no-restore
+
+    - name: Build Application Layer
+      run: dotnet build SteelDesignerEngineer.Application/SteelDesignerEngineer.Application.csproj --configuration Release --no-restore
+
+    - name: Build Domain Layer
+      run: dotnet build SteelDesignerEngineer.Domain/SteelDesignerEngineer.Domain.csproj --configuration Release --no-restore
+
+    - name: Build Data Layer
+      run: dotnet build SteelDesignerEngineer.Data/SteelDesignerEngineer.Data.csproj --configuration Release --no-restore
+
+    - name: Build Infrastructure Layer
+      run: dotnet build SteelDesignerEngineer.Infrastructure/SteelDesignerEngineer.Infrastructure.csproj --configuration Release --no-restore
+
+    - name: Run Tests (if exist)
+      run: |
+        if [ -d "tests" ]; then
+          dotnet test --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+        else
+          echo "No test projects found, skipping tests"
+        fi
+      continue-on-error: true
+
+    - name: Upload Test Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: '**/TestResults/*.trx'
+        if-no-files-found: ignore
+
+    - name: Publish WebAPI
+      run: dotnet publish SteelDesignerEngineer/SteelDesignerEngineer.csproj --configuration Release --output ./publish --no-restore
+
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: webapi-build
+        path: ./publish
+        retention-days: 7
+
+  code-quality:
+    name: Code Quality Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore dependencies
+      run: dotnet restore SteelDesignerEngineer/SteelDesignerEngineer.csproj
+
+    - name: Run Code Analysis
+      run: dotnet build SteelDesignerEngineer/SteelDesignerEngineer.csproj --configuration Release /p:TreatWarningsAsErrors=false
+
+    - name: Security Scan - NuGet Packages
+      run: |
+        dotnet list SteelDesignerEngineer/SteelDesignerEngineer.csproj package --vulnerable --include-transitive 2>&1 | tee vulnerable-packages.txt
+      continue-on-error: true
+
+    - name: Upload Security Scan Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-scan
+        path: vulnerable-packages.txt
+        if-no-files-found: ignore

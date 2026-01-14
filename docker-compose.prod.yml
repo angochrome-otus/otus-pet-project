@@ -1,0 +1,37 @@
+# Production docker-compose configuration
+version: '3.8'
+
+services:
+  webapi:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/steel-designer-engineer:latest
+    container_name: steel-designer-engineer-api
+    ports:
+      - "5000:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80
+      - MongoDbSettings__ConnectionString=${MONGODB_CONNECTION_STRING}
+      - MongoDbSettings__DatabaseName=${MONGODB_DATABASE}
+      - RedisSettings__ConnectionString=${REDIS_CONNECTION_STRING}
+      - RedisSettings__InstanceName=${REDIS_INSTANCE_NAME}
+      - RabbitMqSettings__Host=${RABBITMQ_HOST}
+      - RabbitMqSettings__Port=${RABBITMQ_PORT}
+      - RabbitMqSettings__Username=${RABBITMQ_USERNAME}
+      - RabbitMqSettings__Password=${RABBITMQ_PASSWORD}
+      - OAuth__Google__ClientId=${GOOGLE_CLIENT_ID}
+      - OAuth__Google__ClientSecret=${GOOGLE_CLIENT_SECRET}
+      - OAuth__GitHub__ClientId=${GITHUB_CLIENT_ID}
+      - OAuth__GitHub__ClientSecret=${GITHUB_CLIENT_SECRET}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/swagger/index.html"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - steel-network
+
+networks:
+  steel-network:
+    driver: bridge

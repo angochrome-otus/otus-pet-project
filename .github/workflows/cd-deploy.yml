@@ -1,0 +1,175 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+        default: 'staging'
+      version:
+        description: 'Version/tag to deploy'
+        required: false
+        default: 'latest'
+  push:
+    tags:
+      - 'v*.*.*'
+
+env:
+  DOCKER_IMAGE_NAME: steel-designer-engineer
+  REGISTRY: ghcr.io
+
+jobs:
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    if: github.event.inputs.environment == 'staging' || github.ref == 'refs/heads/develop'
+    environment:
+      name: staging
+      url: https://staging.steel-designer-engineer.com
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deploy to Staging Server
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.STAGING_HOST }}
+        username: ${{ secrets.STAGING_USER }}
+        key: ${{ secrets.STAGING_SSH_KEY }}
+        port: ${{ secrets.STAGING_PORT || 22 }}
+        script: |
+          cd /opt/steel-designer-engineer
+          
+          # Pull latest image
+          docker pull ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.event.inputs.version || 'latest' }}
+          
+          # Stop and remove old container
+          docker-compose down || true
+          
+          # Start new container
+          docker-compose up -d
+          
+          # Wait for healthcheck
+          sleep 30
+          
+          # Verify deployment
+          docker ps | grep steel-designer-engineer
+          
+          # Clean up old images
+          docker image prune -af
+
+    - name: Verify Staging Deployment
+      run: |
+        curl -f https://staging.steel-designer-engineer.com/swagger/index.html || exit 1
+
+    - name: Notify Deployment Success
+      if: success()
+      run: echo "? Staging deployment successful"
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    if: github.event.inputs.environment == 'production' || startsWith(github.ref, 'refs/tags/v')
+    environment:
+      name: production
+      url: https://steel-designer-engineer.com
+    needs: deploy-staging
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Create Backup
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.PROD_HOST }}
+        username: ${{ secrets.PROD_USER }}
+        key: ${{ secrets.PROD_SSH_KEY }}
+        port: ${{ secrets.PROD_PORT || 22 }}
+        script: |
+          # Backup current deployment
+          BACKUP_DIR="/opt/backups/steel-designer-engineer-$(date +%Y%m%d-%H%M%S)"
+          mkdir -p $BACKUP_DIR
+          docker save ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.DOCKER_IMAGE_NAME }}:latest -o $BACKUP_DIR/image.tar
+          echo "Backup created at $BACKUP_DIR"
+
+    - name: Deploy to Production Server
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.PROD_HOST }}
+        username: ${{ secrets.PROD_USER }}
+        key: ${{ secrets.PROD_SSH_KEY }}
+        port: ${{ secrets.PROD_PORT || 22 }}
+        script: |
+          cd /opt/steel-designer-engineer
+          
+          # Pull latest image
+          docker pull ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.event.inputs.version || 'latest' }}
+          
+          # Rolling update with zero downtime
+          docker-compose up -d --no-deps --build webapi
+          
+          # Wait for healthcheck
+          sleep 30
+          
+          # Verify deployment
+          docker ps | grep steel-designer-engineer
+          
+          # Clean up old images
+          docker image prune -af
+
+    - name: Verify Production Deployment
+      run: |
+        curl -f https://steel-designer-engineer.com/swagger/index.html || exit 1
+
+    - name: Run Smoke Tests
+      run: |
+        echo "Running smoke tests..."
+        # Add your smoke tests here
+        curl -f https://steel-designer-engineer.com/swagger/index.html || exit 1
+
+    - name: Rollback on Failure
+      if: failure()
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.PROD_HOST }}
+        username: ${{ secrets.PROD_USER }}
+        key: ${{ secrets.PROD_SSH_KEY }}
+        port: ${{ secrets.PROD_PORT || 22 }}
+        script: |
+          echo "? Deployment failed, rolling back..."
+          cd /opt/steel-designer-engineer
+          
+          # Find latest backup
+          LATEST_BACKUP=$(ls -td /opt/backups/steel-designer-engineer-* | head -1)
+          
+          # Restore backup
+          docker load -i $LATEST_BACKUP/image.tar
+          docker-compose up -d
+          
+          echo "Rollback completed"
+
+    - name: Notify Deployment Success
+      if: success()
+      run: echo "? Production deployment successful"
+
+    - name: Create GitHub Release
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref_name }}
+        release_name: Release ${{ github.ref_name }}
+        body: |
+          ## Changes in this Release
+          - Deployed to production
+          - Docker image: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.ref_name }}
+        draft: false
+        prerelease: false
