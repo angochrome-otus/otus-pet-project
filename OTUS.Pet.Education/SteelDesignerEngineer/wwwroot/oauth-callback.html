@@ -66,14 +66,11 @@
 
         // Parse URL parameters
         const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
-        const state = urlParams.get('state');
+        const status = urlParams.get('status');
         const error = urlParams.get('error');
 
-        // Detect provider from URL or referrer
-        const provider = window.location.pathname.includes('google') ? 'google' 
-                       : window.location.pathname.includes('github') ? 'github'
-                       : localStorage.getItem('oauth_provider') || 'google';
+        // Detect provider from localStorage
+        const provider = localStorage.getItem('oauth_provider') || 'google';
 
         async function handleOAuthCallback() {
             // Check for errors from OAuth provider
@@ -82,15 +79,16 @@
                 return;
             }
 
-            if (!code) {
-                showError('Authorization code not found');
+            // Check if we're processing OAuth (code and state handled by backend GET)
+            if (status !== 'processing') {
+                showError('Invalid OAuth callback state');
                 return;
             }
 
             try {
                 statusEl.textContent = `Authenticating with ${provider}...`;
 
-                // Call backend OAuth callback
+                // Call backend OAuth callback POST (code and state stored in session)
                 const response = await fetch(`${API_URL}/api/Auth/oauth/callback`, {
                     method: 'POST',
                     headers: {
@@ -99,8 +97,8 @@
                     credentials: 'include',
                     body: JSON.stringify({
                         provider: provider,
-                        code: code,
-                        state: state
+                        code: 'SESSION_STORED',
+                        state: 'SESSION_STORED'
                     })
                 });
 
@@ -121,8 +119,8 @@
                     localStorage.removeItem('oauth_provider');
 
                     statusEl.textContent = data.isNewUser 
-                        ? '? Registration successful!' 
-                        : '? Login successful!';
+                        ? '✅ Registration successful!' 
+                        : '✅ Login successful!';
 
                     // Redirect to profile
                     setTimeout(() => {
@@ -138,7 +136,7 @@
         }
 
         function showError(message) {
-            errorEl.textContent = `? Error: ${message}`;
+            errorEl.textContent = `❌ Error: ${message}`;
             errorEl.style.display = 'block';
             statusEl.textContent = 'Authentication failed';
 

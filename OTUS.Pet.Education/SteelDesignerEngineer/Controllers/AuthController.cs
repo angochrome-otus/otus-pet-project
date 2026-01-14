@@ -145,7 +145,41 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// OAuth callback handler
+    /// OAuth callback handler (GET - for OAuth provider redirects)
+    /// </summary>
+    [HttpGet("oauth/callback")]
+    [ProducesResponseType(302)]
+    [ProducesResponseType(400)]
+    public async Task<IActionResult> OAuthCallbackGet(
+        [FromQuery] string? code,
+        [FromQuery] string? state,
+        [FromQuery] string? error,
+        [FromQuery] string? error_description,
+        CancellationToken cancellationToken)
+    {
+        // Handle OAuth errors
+        if (!string.IsNullOrEmpty(error))
+        {
+            _logger.LogWarning("OAuth error: {Error} - {Description}", error, error_description);
+            return Redirect($"/oauth-callback.html?error={Uri.EscapeDataString(error)}");
+        }
+
+        if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(state))
+        {
+            _logger.LogWarning("OAuth callback missing code or state");
+            return Redirect("/oauth-callback.html?error=missing_parameters");
+        }
+
+        // Store code and state in session temporarily for the POST callback
+        HttpContext.Session.SetString("oauth_code", code);
+        HttpContext.Session.SetString("oauth_state_callback", state);
+
+        // Redirect to HTML page with success indicator
+        return Redirect($"/oauth-callback.html?status=processing");
+    }
+
+    /// <summary>
+    /// OAuth callback handler (POST - for AJAX from HTML page)
     /// </summary>
     [HttpPost("oauth/callback")]
     [ProducesResponseType(typeof(OAuthLoginResponse), 200)]
@@ -157,14 +191,34 @@ public class AuthController : ControllerBase
             return BadRequest(new { message = $"Unsupported OAuth provider: {request.Provider}" });
         }
 
+        // Get code and state from session (stored by GET callback)
+        var code = request.Code == "SESSION_STORED" 
+            ? HttpContext.Session.GetString("oauth_code")
+            : request.Code;
+        
+        var state = request.State == "SESSION_STORED"
+            ? HttpContext.Session.GetString("oauth_state_callback")
+            : request.State;
+
+        if (string.IsNullOrEmpty(code))
+        {
+            _logger.LogWarning("OAuth code not found in session for provider: {Provider}", request.Provider);
+            return BadRequest(new { message = "Authorization code not found" });
+        }
+
+        // Validate CSRF state
         var sessionState = HttpContext.Session.GetString($"oauth_state_{request.Provider}");
-        if (!string.IsNullOrEmpty(sessionState) && sessionState != request.State)
+        if (!string.IsNullOrEmpty(sessionState) && sessionState != state)
         {
             _logger.LogWarning("OAuth CSRF state mismatch for provider: {Provider}", request.Provider);
             return BadRequest(new { message = "Invalid state parameter" });
         }
 
-        var oauthUser = await _oauthService.GetUserInfoAsync(request.Provider, request.Code, cancellationToken);
+        // Clear session data
+        HttpContext.Session.Remove("oauth_code");
+        HttpContext.Session.Remove("oauth_state_callback");
+
+        var oauthUser = await _oauthService.GetUserInfoAsync(request.Provider, code, cancellationToken);
 
         if (oauthUser == null || string.IsNullOrEmpty(oauthUser.Email))
         {
