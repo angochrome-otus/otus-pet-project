@@ -371,6 +371,13 @@ FodyWeavers.xsd
 **/appsettings.Production.json
 **/appsettings.Staging.json
 
+# Markdown documentation files (auto-generated guides)
+**/*.md
+!README.md
+!CONTRIBUTING.md
+!LICENSE.md
+!CHANGELOG.md
+
 # Kubernetes configuration files
 k8s/
 **/k8s/
