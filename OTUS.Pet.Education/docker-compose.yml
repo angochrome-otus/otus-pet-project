@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  # Основное веб-приложение
+  steel-designer-engineer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80
+    depends_on:
+      - rabbitmq
+    networks:
+      - steel-network
+
+  # RabbitMQ для обмена сообщениями
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: xxx711717XXX
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - steel-network
+
+# Определяем тома для постоянного хранения данных
+volumes:
+  rabbitmq_data:
+
+# Определяем сеть для взаимодействия между сервисами
+networks:
+  steel-network:
+    driver: bridge
