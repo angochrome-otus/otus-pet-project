@@ -263,3 +263,7 @@ appsettings.*.json
 # WPF специфичные временные файлы
 *.g.cs
 *.g.i.cs
+
+# YAML файлы конфигурации
+*.yml
+*.yaml
