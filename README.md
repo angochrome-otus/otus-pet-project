@@ -1,4 +1,4 @@
-# Пошаговое развертывание Steel Designer Engineer в Kubernetes
+# Пошаговое развертывание с проверкой в CI/CD
 
 ## Обзор
 
