@@ -1,23 +1,29 @@
 version: '3.8'
 
-services:
-  # Основное веб-приложение
-  steel-designer-engineer:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "80:80"
-      - "443:443"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:80
-    depends_on:
-      - rabbitmq
-    networks:
-      - steel-network
+# ⚠️ DEPRECATED: Use docker-compose.microservices.yml instead
+# 
+# This docker-compose file is kept for backward compatibility only.
+# The application has been migrated to a microservices architecture.
+# 
+# For local development and testing, use:
+#   docker-compose -f docker-compose.microservices.yml up -d
+#
+# For production deployment, use:
+#   docker-compose -f docker-compose.production.yml up -d
 
-  # RabbitMQ для обмена сообщениями
+services:
+  # Redirect to microservices compose
+  # This service will fail intentionally to notify users
+  deprecated-notice:
+    image: alpine:latest
+    container_name: deprecated-notice
+    command: |
+      sh -c "echo '⚠️  WARNING: This docker-compose.yml is DEPRECATED!' && 
+             echo 'Please use docker-compose.microservices.yml instead:' && 
+             echo '  docker-compose -f docker-compose.microservices.yml up -d' && 
+             exit 1"
+
+  # RabbitMQ - still needed for backward compatibility
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
@@ -33,11 +39,9 @@ services:
     networks:
       - steel-network
 
-# Определяем тома для постоянного хранения данных
 volumes:
   rabbitmq_data:
 
-# Определяем сеть для взаимодействия между сервисами
 networks:
   steel-network:
     driver: bridge

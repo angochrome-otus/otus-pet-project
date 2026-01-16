@@ -1,0 +1,95 @@
+name: Dockerfile Lint and Security Scan
+
+on:
+  push:
+    paths:
+      - '**/Dockerfile'
+      - '.dockerignore'
+      - 'docker-compose*.yml'
+  pull_request:
+    paths:
+      - '**/Dockerfile'
+      - '.dockerignore'
+      - 'docker-compose*.yml'
+
+jobs:
+  hadolint:
+    name: Lint Dockerfiles
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run hadolint on root Dockerfile
+      uses: hadolint/hadolint-action@v3.1.0
+      with:
+        dockerfile: ./Dockerfile
+        failure-threshold: warning
+        
+    - name: Run hadolint on ApiGateway Dockerfile
+      uses: hadolint/hadolint-action@v3.1.0
+      with:
+        dockerfile: ./SteelDesignerEngineer.ApiGateway/Dockerfile
+        failure-threshold: warning
+        
+    - name: Run hadolint on Auth Service Dockerfile
+      uses: hadolint/hadolint-action@v3.1.0
+      with:
+        dockerfile: ./SteelDesignerEngineer.Services.Auth/Dockerfile
+        failure-threshold: warning
+        
+    - name: Run hadolint on Session Service Dockerfile
+      uses: hadolint/hadolint-action@v3.1.0
+      with:
+        dockerfile: ./SteelDesignerEngineer.Services.Session/Dockerfile
+        failure-threshold: warning
+        
+    - name: Run hadolint on PageContent Service Dockerfile
+      uses: hadolint/hadolint-action@v3.1.0
+      with:
+        dockerfile: ./SteelDesignerEngineer.Services.PageContent/Dockerfile
+        failure-threshold: warning
+
+  trivy-scan:
+    name: Security Scan with Trivy
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Build ApiGateway image
+      run: docker build -f SteelDesignerEngineer.ApiGateway/Dockerfile -t steel-api-gateway:test .
+      
+    - name: Run Trivy scan on ApiGateway
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: steel-api-gateway:test
+        format: 'sarif'
+        output: 'trivy-api-gateway-results.sarif'
+        severity: 'CRITICAL,HIGH'
+        
+    - name: Upload Trivy results to GitHub Security
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-api-gateway-results.sarif'
+        category: 'trivy-api-gateway'
+
+  docker-compose-validate:
+    name: Validate Docker Compose files
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Validate docker-compose.yml
+      run: docker-compose -f docker-compose.yml config > /dev/null
+      
+    - name: Validate docker-compose.microservices.yml
+      run: docker-compose -f docker-compose.microservices.yml config > /dev/null
+      
+    - name: Validate docker-compose.production.yml
+      run: docker-compose -f docker-compose.production.yml config > /dev/null

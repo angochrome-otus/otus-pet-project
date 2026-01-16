@@ -1,0 +1,101 @@
+version: 2
+updates:
+  # GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+
+  # NuGet dependencies for .NET projects
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+    labels:
+      - "dependencies"
+      - "nuget"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    open-pull-requests-limit: 10
+    groups:
+      microsoft-packages:
+        patterns:
+          - "Microsoft.*"
+        update-types:
+          - "minor"
+          - "patch"
+      mongodb-packages:
+        patterns:
+          - "MongoDB.*"
+      rabbitmq-packages:
+        patterns:
+          - "RabbitMQ.*"
+      redis-packages:
+        patterns:
+          - "StackExchange.Redis*"
+
+  # Docker dependencies
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+
+  # Docker - ApiGateway
+  - package-ecosystem: "docker"
+    directory: "/SteelDesignerEngineer.ApiGateway"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "api-gateway"
+
+  # Docker - Auth Service
+  - package-ecosystem: "docker"
+    directory: "/SteelDesignerEngineer.Services.Auth"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "auth-service"
+
+  # Docker - Session Service
+  - package-ecosystem: "docker"
+    directory: "/SteelDesignerEngineer.Services.Session"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "session-service"
+
+  # Docker - PageContent Service
+  - package-ecosystem: "docker"
+    directory: "/SteelDesignerEngineer.Services.PageContent"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "pagecontent-service"

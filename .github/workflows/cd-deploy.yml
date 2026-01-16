@@ -1,0 +1,105 @@
+name: CD - Deploy to Environment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+      tag:
+        description: 'Docker image tag to deploy'
+        required: true
+        default: 'latest'
+
+env:
+  DOTNET_VERSION: '8.0.x'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'latest'
+        
+    - name: Configure kubectl
+      run: |
+        mkdir -p $HOME/.kube
+        echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
+        
+    - name: Set namespace
+      run: |
+        case "${{ github.event.inputs.environment }}" in
+          development)
+            echo "NAMESPACE=steel-dev" >> $GITHUB_ENV
+            ;;
+          staging)
+            echo "NAMESPACE=steel-staging" >> $GITHUB_ENV
+            ;;
+          production)
+            echo "NAMESPACE=steel-prod" >> $GITHUB_ENV
+            ;;
+        esac
+        
+    - name: Update image tags in manifests
+      run: |
+        cd SteelDesignerEngineer.ApiGateway/k8s/deployments
+        
+        for file in steel-*-deployment.yaml; do
+          sed -i "s|image:.*|image: ghcr.io/${{ github.repository_owner }}/steel-designer-engineer-${file%-deployment.yaml}:${{ github.event.inputs.tag }}|g" "$file"
+        done
+        
+    - name: Deploy to Kubernetes
+      run: |
+        kubectl apply -f SteelDesignerEngineer.ApiGateway/k8s/namespace.yaml
+        kubectl apply -f SteelDesignerEngineer.ApiGateway/k8s/configs/ -n ${{ env.NAMESPACE }}
+        kubectl apply -f SteelDesignerEngineer.ApiGateway/k8s/secrets/ -n ${{ env.NAMESPACE }}
+        kubectl apply -f SteelDesignerEngineer.ApiGateway/k8s/deployments/ -n ${{ env.NAMESPACE }}
+        kubectl apply -f SteelDesignerEngineer.ApiGateway/k8s/services/ -n ${{ env.NAMESPACE }}
+        
+    - name: Wait for rollout
+      run: |
+        kubectl rollout status deployment/steel-api-gateway -n ${{ env.NAMESPACE }} --timeout=5m
+        kubectl rollout status deployment/steel-auth-service -n ${{ env.NAMESPACE }} --timeout=5m
+        kubectl rollout status deployment/steel-session-service -n ${{ env.NAMESPACE }} --timeout=5m
+        kubectl rollout status deployment/steel-pagecontent-service -n ${{ env.NAMESPACE }} --timeout=5m
+        
+    - name: Verify deployment
+      run: |
+        kubectl get pods -n ${{ env.NAMESPACE }}
+        kubectl get services -n ${{ env.NAMESPACE }}
+        
+  health-check:
+    needs: deploy
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Wait for services to be ready
+      run: sleep 30
+      
+    - name: Check API Gateway health
+      run: |
+        HEALTH_URL="${{ secrets.API_GATEWAY_URL }}/health"
+        
+        for i in {1..10}; do
+          if curl -f -s "$HEALTH_URL" > /dev/null; then
+            echo "Health check passed!"
+            exit 0
+          fi
+          echo "Attempt $i failed, retrying..."
+          sleep 10
+        done
+        
+        echo "Health check failed after 10 attempts"
+        exit 1

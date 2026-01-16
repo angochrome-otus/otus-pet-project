@@ -1,0 +1,116 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+env:
+  DOTNET_VERSION: '8.0.x'
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: Extract version from tag
+      id: get_version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      
+    - name: Build solution
+      run: dotnet build OTUS.Pet.Education.sln --configuration Release
+      
+    - name: Publish ApiGateway
+      run: |
+        dotnet publish SteelDesignerEngineer.ApiGateway/SteelDesignerEngineer.ApiGateway.csproj \
+          -c Release \
+          -o ./publish/api-gateway \
+          /p:Version=${{ steps.get_version.outputs.VERSION }}
+          
+    - name: Publish Auth Service
+      run: |
+        dotnet publish SteelDesignerEngineer.Services.Auth/SteelDesignerEngineer.Services.Auth.csproj \
+          -c Release \
+          -o ./publish/auth-service \
+          /p:Version=${{ steps.get_version.outputs.VERSION }}
+          
+    - name: Publish Session Service
+      run: |
+        dotnet publish SteelDesignerEngineer.Services.Session/SteelDesignerEngineer.Services.Session.csproj \
+          -c Release \
+          -o ./publish/session-service \
+          /p:Version=${{ steps.get_version.outputs.VERSION }}
+          
+    - name: Publish PageContent Service
+      run: |
+        dotnet publish SteelDesignerEngineer.Services.PageContent/SteelDesignerEngineer.Services.PageContent.csproj \
+          -c Release \
+          -o ./publish/pagecontent-service \
+          /p:Version=${{ steps.get_version.outputs.VERSION }}
+          
+    - name: Create deployment archive
+      run: |
+        cd publish
+        tar -czf ../steel-designer-engineer-${{ steps.get_version.outputs.VERSION }}.tar.gz .
+        cd ..
+        
+    - name: Generate changelog
+      id: changelog
+      uses: mikepenz/release-changelog-builder-action@v4
+      with:
+        configuration: ".github/changelog-config.json"
+        ignorePreReleases: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: Release ${{ steps.get_version.outputs.VERSION }}
+        body: |
+          ## Steel Designer Engineer - Release ${{ steps.get_version.outputs.VERSION }}
+          
+          ### Microservices Architecture
+          This release includes the following microservices:
+          - **API Gateway**: Main entry point for all requests
+          - **Auth Service**: Authentication and authorization
+          - **Session Service**: Session management
+          - **PageContent Service**: Content management
+          
+          ### Docker Images
+          Docker images for this release are available at:
+          - `ghcr.io/${{ github.repository_owner }}/steel-designer-engineer-api-gateway:${{ steps.get_version.outputs.VERSION }}`
+          - `ghcr.io/${{ github.repository_owner }}/steel-designer-engineer-auth-service:${{ steps.get_version.outputs.VERSION }}`
+          - `ghcr.io/${{ github.repository_owner }}/steel-designer-engineer-session-service:${{ steps.get_version.outputs.VERSION }}`
+          - `ghcr.io/${{ github.repository_owner }}/steel-designer-engineer-pagecontent-service:${{ steps.get_version.outputs.VERSION }}`
+          
+          ### Deployment
+          Use docker-compose:
+          ```bash
+          docker-compose -f docker-compose.microservices.yml up -d
+          ```
+          
+          Or deploy to Kubernetes using manifests in `SteelDesignerEngineer.ApiGateway/k8s/`
+          
+          ### Changes
+          ${{ steps.changelog.outputs.changelog }}
+        files: |
+          steel-designer-engineer-${{ steps.get_version.outputs.VERSION }}.tar.gz
+          docker-compose.microservices.yml
+          docker-compose.production.yml
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
