@@ -1,0 +1,5 @@
+# Service-level ignore (optional). Main ignore is at repo root.
+**/bin/
+**/obj/
+**/.vs/
+**/.vscode/

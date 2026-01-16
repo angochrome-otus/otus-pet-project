@@ -3,6 +3,10 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# Markdown files
+# NOTE: keep documentation in git. Ignore only local/private copies.
+*.md
+
 # User-specific files
 *.rsuser
 *.suo
@@ -370,13 +374,6 @@ FodyWeavers.xsd
 # Keep Development and Template configs in Git
 **/appsettings.Production.json
 **/appsettings.Staging.json
-
-# Markdown documentation files (auto-generated guides)
-**/*.md
-!README.md
-!CONTRIBUTING.md
-!LICENSE.md
-!CHANGELOG.md
 
 # Kubernetes configuration files
 k8s/

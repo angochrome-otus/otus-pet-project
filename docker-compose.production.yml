@@ -1,0 +1,267 @@
+version: '3.8'
+
+# ==========================================
+# Production Docker Compose Configuration
+# Microservices Architecture with Resilience
+# ==========================================
+
+services:
+  # ==========================================
+  # Infrastructure Services
+  # ==========================================
+  
+  mongodb:
+    image: mongo:7
+    container_name: steel-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-xxx711717XXX}
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - steel-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  redis:
+    image: redis:7-alpine
+    container_name: steel-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD:-xxx711717}
+    volumes:
+      - redis_data:/data
+    networks:
+      - steel-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--pass", "${REDIS_PASSWORD:-xxx711717}", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: steel-rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-xxx711717XXX}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - steel-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ==========================================
+  # Observability (Optional)
+  # ==========================================
+  
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: steel-jaeger
+    restart: unless-stopped
+    ports:
+      - "5775:5775/udp"
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - "5778:5778"
+      - "16686:16686"  # Jaeger UI
+      - "14268:14268"
+      - "14250:14250"
+      - "9411:9411"
+    environment:
+      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+    networks:
+      - steel-network
+    profiles:
+      - observability
+
+  # ==========================================
+  # API Gateway
+  # ==========================================
+  
+  api-gateway:
+    image: ${REGISTRY:-nnshchegolev}/steel-api-gateway:${VERSION:-latest}
+    container_name: steel-api-gateway
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - ASPNETCORE_URLS=http://+:5000
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Production}
+      - ConnectionStrings__MongoDB=mongodb://admin:${MONGO_PASSWORD:-xxx711717XXX}@mongodb:27017/SteelDesignerEngineerDB?authSource=admin&directConnection=true
+      - ConnectionStrings__Redis=redis:6379,password=${REDIS_PASSWORD:-xxx711717}
+      - ConnectionStrings__RabbitMQ=amqp://admin:${RABBITMQ_PASSWORD:-xxx711717XXX}@rabbitmq:5672
+      - DatabaseSettings__DatabaseName=SteelDesignerEngineerDB
+      - Jaeger__Enabled=true
+      - Jaeger__Host=jaeger
+      - Jaeger__Port=6831
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - steel-network
+    volumes:
+      - ./logs/gateway:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ==========================================
+  # Microservices
+  # ==========================================
+  
+  auth-service:
+    image: ${REGISTRY:-nnshchegolev}/steel-auth-service:${VERSION:-latest}
+    container_name: steel-auth-service
+    restart: always
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Production}
+      - ConnectionStrings__MongoDB=mongodb://admin:${MONGO_PASSWORD:-xxx711717XXX}@mongodb:27017/SteelDesignerEngineerDB?authSource=admin&directConnection=true
+      - ConnectionStrings__RabbitMQ=amqp://admin:${RABBITMQ_PASSWORD:-xxx711717XXX}@rabbitmq:5672
+      - DatabaseSettings__DatabaseName=SteelDesignerEngineerDB
+      - DatabaseSettings__UsersCollection=users
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - steel-network
+    volumes:
+      - ./logs/auth:/app/logs
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  session-service:
+    image: ${REGISTRY:-nnshchegolev}/steel-session-service:${VERSION:-latest}
+    container_name: steel-session-service
+    restart: always
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Production}
+      - ConnectionStrings__MongoDB=mongodb://admin:${MONGO_PASSWORD:-xxx711717XXX}@mongodb:27017/SteelDesignerEngineerDB?authSource=admin&directConnection=true
+      - ConnectionStrings__Redis=redis:6379,password=${REDIS_PASSWORD:-xxx711717}
+      - ConnectionStrings__RabbitMQ=amqp://admin:${RABBITMQ_PASSWORD:-xxx711717XXX}@rabbitmq:5672
+      - DatabaseSettings__DatabaseName=SteelDesignerEngineerDB
+      - DatabaseSettings__SessionHistoryCollection=sessionHistory
+      - CacheSettings__SessionKeyPrefix=session
+      - CacheSettings__DefaultExpirationMinutes=1440
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - steel-network
+    volumes:
+      - ./logs/session:/app/logs
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  pagecontent-service:
+    image: ${REGISTRY:-nnshchegolev}/steel-pagecontent-service:${VERSION:-latest}
+    container_name: steel-pagecontent-service
+    restart: always
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Production}
+      - ConnectionStrings__MongoDB=mongodb://admin:${MONGO_PASSWORD:-xxx711717XXX}@mongodb:27017/SteelDesignerEngineerDB?authSource=admin&directConnection=true
+      - ConnectionStrings__Redis=redis:6379,password=${REDIS_PASSWORD:-xxx711717}
+      - ConnectionStrings__RabbitMQ=amqp://admin:${RABBITMQ_PASSWORD:-xxx711717XXX}@rabbitmq:5672
+      - DatabaseSettings__DatabaseName=SteelDesignerEngineerDB
+      - DatabaseSettings__PageContentsCollection=pageContents
+      - CacheSettings__PageContentKeyPrefix=page
+      - CacheSettings__DefaultExpirationMinutes=60
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - steel-network
+    volumes:
+      - ./logs/pagecontent:/app/logs
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+networks:
+  steel-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    driver: local
+  redis_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+
+# ==========================================
+# Usage
+# ==========================================
+# 
+# 1. Start with observability:
+#    docker-compose --profile observability up -d
+#
+# 2. Start without observability:
+#    docker-compose up -d
+#
+# 3. View logs:
+#    docker-compose logs -f api-gateway
+#
+# 4. Check health:
+#    curl http://localhost:5000/health/ready
+#
+# 5. View traces (if observability enabled):
+#    http://localhost:16686 (Jaeger UI)
+#
+# 6. Scale microservices:
+#    docker-compose up -d --scale auth-service=3

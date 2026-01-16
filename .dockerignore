@@ -1,0 +1,73 @@
+**/.dockerignore
+
+# Git and version control
+**/.git
+**/.gitignore
+**/.gitattributes
+
+# IDE and editors
+**/.vs
+**/.vscode
+**/.idea
+**/.project
+**/.settings
+**/.toolstarget
+
+# User-specific files
+**/*.*proj.user
+**/*.dbmdl
+**/*.jfm
+**/*.suo
+**/*.user
+
+# Build outputs - IMPORTANT: These should be excluded
+**/bin/
+**/obj/
+**/out/
+**/publish/
+
+# Node modules
+**/node_modules
+**/npm-debug.log
+
+# Kubernetes configs (not needed in image)
+k8s/
+**/k8s/
+
+# Documentation
+# (keep README.md etc. in build context; excluding all md often breaks CI steps that package docs)
+LICENSE
+
+# Test results
+TestResults/
+**/*.trx
+
+# Logs
+logs/
+**/*.log
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+
+# ============================================
+# WPF PROJECT (not for Docker)
+# ============================================
+SteelDesignerEngineer.WPF/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files - keep templates
+.env.local
+.env.*.local
+
+# ============================================
+# IMPORTANT: DO NOT EXCLUDE
+# ============================================
+# - .csproj files (needed for restore)
+# - Dockerfile (needed for multi-stage builds)
+# - docker-compose.yml (may be needed in some contexts)
+# - Source code files (.cs)# - Source code files (.cs)

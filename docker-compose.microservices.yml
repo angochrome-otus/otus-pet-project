@@ -1,0 +1,202 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # Shared Infrastructure Services
+  # ==========================================
+  
+  mongodb:
+    image: mongo:7
+    container_name: steel-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: xxx711717XXX
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - steel-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: steel-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass xxx711717
+    volumes:
+      - redis_data:/data
+    networks:
+      - steel-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--pass", "xxx711717", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: steel-rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"   # AMQP
+      - "15672:15672" # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: xxx711717XXX
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - steel-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ==========================================
+  # Microservices
+  # All services share the same MongoDB database
+  # Communication via RabbitMQ only
+  # ==========================================
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: SteelDesignerEngineer.ApiGateway/Dockerfile
+    container_name: steel-api-gateway
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - ASPNETCORE_URLS=http://+:5000
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__RabbitMQ=amqp://admin:xxx711717XXX@rabbitmq:5672
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - steel-network
+    volumes:
+      - ./logs/gateway:/app/logs
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:5000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: SteelDesignerEngineer.Services.Auth/Dockerfile
+    container_name: steel-auth-service
+    restart: always
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__MongoDB=mongodb://admin:xxx711717XXX@mongodb:27017/?authSource=admin&directConnection=true
+      - ConnectionStrings__RabbitMQ=amqp://admin:xxx711717XXX@rabbitmq:5672
+      - DatabaseSettings__DatabaseName=SteelDesignerEngineerDB
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - steel-network
+    volumes:
+      - ./logs/auth:/app/logs
+
+  session-service:
+    build:
+      context: .
+      dockerfile: SteelDesignerEngineer.Services.Session/Dockerfile
+    container_name: steel-session-service
+    restart: always
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__Redis=redis:6379,password=xxx711717
+      - ConnectionStrings__MongoDB=mongodb://admin:xxx711717XXX@mongodb:27017/?authSource=admin&directConnection=true
+      - ConnectionStrings__RabbitMQ=amqp://admin:xxx711717XXX@rabbitmq:5672
+      - DatabaseSettings__DatabaseName=SteelDesignerEngineerDB
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - steel-network
+    volumes:
+      - ./logs/session:/app/logs
+
+  pagecontent-service:
+    build:
+      context: .
+      dockerfile: SteelDesignerEngineer.Services.PageContent/Dockerfile
+    container_name: steel-pagecontent-service
+    restart: always
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__MongoDB=mongodb://admin:xxx711717XXX@mongodb:27017/?authSource=admin&directConnection=true
+      - ConnectionStrings__Redis=redis:6379,password=xxx711717
+      - ConnectionStrings__RabbitMQ=amqp://admin:xxx711717XXX@rabbitmq:5672
+      - DatabaseSettings__DatabaseName=SteelDesignerEngineerDB
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - steel-network
+    volumes:
+      - ./logs/pagecontent:/app/logs
+
+networks:
+  steel-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    driver: local
+  redis_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+
+# ==========================================
+# Usage
+# ==========================================
+# 
+# Start all services:
+#   docker-compose up -d
+# 
+# Start specific service:
+#   docker-compose up -d api-gateway
+# 
+# View logs:
+#   docker-compose logs -f api-gateway
+#   docker-compose logs -f auth-service
+# 
+# Stop all services:
+#   docker-compose down
+# 
+# Rebuild and start:
+#   docker-compose up -d --build
+# 
+# Scale services:
+#   docker-compose up -d --scale auth-service=2 --scale session-service=2

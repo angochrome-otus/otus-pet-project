@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Configuration file -->
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- WPF Extended Toolkit -->
+    <PackageReference Include="Extended.Wpf.Toolkit" Version="4.6.1" />
+    
+    <!-- WebView2 для preview HTML -->
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2739.15" />
+    
+    <!-- AvalonEdit для редактора кода -->
+    <PackageReference Include="AvalonEdit" Version="6.3.0.90" />
+    
+    <!-- Newtonsoft.Json для работы с JSON -->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    
+    <!-- HTTP клиент -->
+    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.0" />
+    
+    <!-- Dependency Injection -->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.0" />
+    
+    <!-- MaterialDesign для красивого UI -->
+    <PackageReference Include="MaterialDesignThemes" Version="5.1.0" />
+    <PackageReference Include="MaterialDesignColors" Version="3.1.0" />
+  </ItemGroup>
+
+</Project>
