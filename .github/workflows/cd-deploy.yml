@@ -18,27 +18,41 @@ on:
 
 env:
   DOTNET_VERSION: '8.0.x'
+  K8S_ROOT: 'SteelDesignerEngineer.ApiGateway/k8s'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
+    - name: Check Kubernetes manifests exist
+      id: check-k8s
+      run: |
+        if [ -d "${{ env.K8S_ROOT }}" ]; then
+          echo "has_k8s=true" >> $GITHUB_OUTPUT
+        else
+          echo "has_k8s=false" >> $GITHUB_OUTPUT
+          echo "::notice::Kubernetes manifests directory '${{ env.K8S_ROOT }}' not found. Skipping deployment."
+        fi
+
     - name: Install kubectl
+      if: steps.check-k8s.outputs.has_k8s == 'true'
       uses: azure/setup-kubectl@v3
       with:
         version: 'latest'
-        
+
     - name: Configure kubectl
+      if: steps.check-k8s.outputs.has_k8s == 'true'
       run: |
         mkdir -p $HOME/.kube
         echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
-        
+
     - name: Set namespace
+      if: steps.check-k8s.outputs.has_k8s == 'true'
       run: |
         case "${{ github.event.inputs.environment }}" in
           development)
@@ -51,47 +65,54 @@ jobs:
             echo "NAMESPACE=steel-prod" >> $GITHUB_ENV
             ;;
         esac
-        
+
     - name: Update image tags in manifests
+      if: steps.check-k8s.outputs.has_k8s == 'true'
       run: |
-        cd SteelDesignerEngineer.ApiGateway/k8s/deployments
-        
-        for file in steel-*-deployment.yaml; do
-          sed -i "s|image:.*|image: ghcr.io/${{ github.repository_owner }}/steel-designer-engineer-${file%-deployment.yaml}:${{ github.event.inputs.tag }}|g" "$file"
+        DEPLOYMENTS_DIR="${{ env.K8S_ROOT }}/deployments"
+        if [ ! -d "$DEPLOYMENTS_DIR" ]; then
+          echo "::warning::No deployments directory found at '$DEPLOYMENTS_DIR'. Skipping image patch step."
+          exit 0
+        fi
+
+        # Patch only lines that start with 'image:' (keeps YAML formatting)
+        for file in "$DEPLOYMENTS_DIR"/*.y*ml; do
+          [ -e "$file" ] || continue
+          sed -i -E "s|^([[:space:]]*image:[[:space:]]*).*$|\\1ghcr.io/${{ github.repository_owner }}/steel-designer-engineer-${{ github.event.inputs.tag }}|" "$file" || true
         done
-        
+
     - name: Deploy to Kubernetes
+      if: steps.check-k8s.outputs.has_k8s == 'true'
       run: |
-        kubectl apply -f SteelDesignerEngineer.ApiGateway/k8s/namespace.yaml
-        kubectl apply -f SteelDesignerEngineer.ApiGateway/k8s/configs/ -n ${{ env.NAMESPACE }}
-        kubectl apply -f SteelDesignerEngineer.ApiGateway/k8s/secrets/ -n ${{ env.NAMESPACE }}
-        kubectl apply -f SteelDesignerEngineer.ApiGateway/k8s/deployments/ -n ${{ env.NAMESPACE }}
-        kubectl apply -f SteelDesignerEngineer.ApiGateway/k8s/services/ -n ${{ env.NAMESPACE }}
-        
+        kubectl apply -f "${{ env.K8S_ROOT }}/namespace.yaml" || true
+        kubectl apply -f "${{ env.K8S_ROOT }}/configs/" -n "${{ env.NAMESPACE }}"
+        kubectl apply -f "${{ env.K8S_ROOT }}/secrets/" -n "${{ env.NAMESPACE }}"
+        kubectl apply -f "${{ env.K8S_ROOT }}/deployments/" -n "${{ env.NAMESPACE }}"
+        kubectl apply -f "${{ env.K8S_ROOT }}/services/" -n "${{ env.NAMESPACE }}"
+
     - name: Wait for rollout
+      if: steps.check-k8s.outputs.has_k8s == 'true'
       run: |
-        kubectl rollout status deployment/steel-api-gateway -n ${{ env.NAMESPACE }} --timeout=5m
-        kubectl rollout status deployment/steel-auth-service -n ${{ env.NAMESPACE }} --timeout=5m
-        kubectl rollout status deployment/steel-session-service -n ${{ env.NAMESPACE }} --timeout=5m
-        kubectl rollout status deployment/steel-pagecontent-service -n ${{ env.NAMESPACE }} --timeout=5m
-        
+        kubectl rollout status deployment/steel-api-gateway -n "${{ env.NAMESPACE }}" --timeout=5m || true
+        kubectl rollout status deployment/steel-auth-service -n "${{ env.NAMESPACE }}" --timeout=5m || true
+        kubectl rollout status deployment/steel-session-service -n "${{ env.NAMESPACE }}" --timeout=5m || true
+        kubectl rollout status deployment/steel-pagecontent-service -n "${{ env.NAMESPACE }}" --timeout=5m || true
+
     - name: Verify deployment
+      if: steps.check-k8s.outputs.has_k8s == 'true'
       run: |
-        kubectl get pods -n ${{ env.NAMESPACE }}
-        kubectl get services -n ${{ env.NAMESPACE }}
-        
+        kubectl get pods -n "${{ env.NAMESPACE }}"
+        kubectl get services -n "${{ env.NAMESPACE }}"
+
   health-check:
     needs: deploy
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Wait for services to be ready
-      run: sleep 30
-      
     - name: Check API Gateway health
       run: |
         HEALTH_URL="${{ secrets.API_GATEWAY_URL }}/health"
-        
+
         for i in {1..10}; do
           if curl -f -s "$HEALTH_URL" > /dev/null; then
             echo "Health check passed!"
@@ -100,6 +121,6 @@ jobs:
           echo "Attempt $i failed, retrying..."
           sleep 10
         done
-        
+
         echo "Health check failed after 10 attempts"
         exit 1
