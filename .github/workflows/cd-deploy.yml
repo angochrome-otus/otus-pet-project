@@ -25,6 +25,9 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
 
+    outputs:
+      has_k8s: ${{ steps.check-k8s.outputs.has_k8s }}
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -106,6 +109,7 @@ jobs:
 
   health-check:
     needs: deploy
+    if: needs.deploy.outputs.has_k8s == 'true'
     runs-on: ubuntu-latest
 
     steps:
