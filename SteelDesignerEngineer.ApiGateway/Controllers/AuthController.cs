@@ -40,6 +40,8 @@ public class AuthController : ControllerBase
         if (!res.Success)
             return BadRequest(res);
 
+        var role = (res.Role ?? string.Empty).ToLowerInvariant();
+
         if (!string.IsNullOrWhiteSpace(res.UserId))
         {
             var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
@@ -48,7 +50,7 @@ public class AuthController : ControllerBase
                 UserId = res.UserId,
                 UserName = $"{res.FirstName} {res.LastName}".Trim(),
                 UserEmail = res.Email ?? string.Empty,
-                UserRole = res.Role ?? string.Empty,
+                UserRole = role,
                 IpAddress = ipAddress,
                 UserAgent = userAgent
             }, cancellationToken);
@@ -60,16 +62,16 @@ public class AuthController : ControllerBase
         // Return formatted response matching frontend expectations
         return Ok(new
         {
-            Success = res.Success,
-            Message = res.Message,
-            User = new
+            success = res.Success,
+            message = res.Message,
+            user = new
             {
-                Id = res.UserId,
-                Email = res.Email,
-                FirstName = res.FirstName,
-                LastName = res.LastName,
-                Role = res.Role,
-                AvatarUrl = (string?)null  // Register doesn't return avatar
+                id = res.UserId,
+                email = res.Email,
+                firstName = res.FirstName,
+                lastName = res.LastName,
+                role = role,
+                avatarUrl = (string?)null  // Register doesn't return avatar
             }
         });
     }
@@ -89,6 +91,8 @@ public class AuthController : ControllerBase
         if (!res.Success)
             return Unauthorized(res);
 
+        var role = (res.Role ?? string.Empty).ToLowerInvariant();
+
         if (!string.IsNullOrWhiteSpace(res.UserId))
         {
             var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
@@ -97,30 +101,35 @@ public class AuthController : ControllerBase
                 UserId = res.UserId,
                 UserName = $"{res.FirstName} {res.LastName}".Trim(),
                 UserEmail = res.Email ?? string.Empty,
-                UserRole = res.Role ?? string.Empty,
+                UserRole = role,
                 IpAddress = ipAddress,
                 UserAgent = userAgent
             }, cancellationToken);
 
-            if (sessionRes != null && sessionRes.Success && !string.IsNullOrWhiteSpace(sessionRes.SessionId))
-                SessionCookieMiddleware.SetSessionCookie(HttpContext, sessionRes.SessionId, SessionExpiration);
+            if (sessionRes == null)
+                return StatusCode(StatusCodes.Status503ServiceUnavailable, new { success = false, message = "Session service unavailable" });
+
+            if (!sessionRes.Success || string.IsNullOrWhiteSpace(sessionRes.SessionId))
+                return StatusCode(StatusCodes.Status503ServiceUnavailable, new { success = false, message = "Failed to create session" });
+
+            SessionCookieMiddleware.SetSessionCookie(HttpContext, sessionRes.SessionId, SessionExpiration);
         }
 
-        _logger.LogInformation("User logged in: {Email}", request.Email);
+        _logger.LogInformation("User logged in: {Email} with role {Role}", request.Email, role);
 
         // Return formatted response matching frontend expectations
         return Ok(new
         {
-            Success = res.Success,
-            Message = res.Message,
-            User = new
+            success = res.Success,
+            message = res.Message,
+            user = new
             {
-                Id = res.UserId,
-                Email = res.Email,
-                FirstName = res.FirstName,
-                LastName = res.LastName,
-                Role = res.Role,
-                AvatarUrl = res.AvatarUrl
+                id = res.UserId,
+                email = res.Email,
+                firstName = res.FirstName,
+                lastName = res.LastName,
+                role = role,
+                avatarUrl = res.AvatarUrl
             }
         });
     }
@@ -140,7 +149,7 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Получить текущего пользователя
+    /// Профиль текущего пользователя
     /// </summary>
     [HttpGet("me")]
     public async Task<IActionResult> GetMe(CancellationToken cancellationToken)
@@ -156,11 +165,28 @@ public class AuthController : ControllerBase
         if (res == null || !res.Success)
             return NotFound();
 
-        return Ok(res);
+        // Normalize role for frontend
+        var role = (res.Role ?? string.Empty).ToLowerInvariant();
+
+        return Ok(new
+        {
+            success = true,
+            user = new
+            {
+                id = res.UserId,
+                email = res.Email,
+                firstName = res.FirstName,
+                lastName = res.LastName,
+                role = role,
+                avatarUrl = res.AvatarUrl,
+                createdAt = res.CreatedAt,
+                lastLoginAt = res.LastLoginAt
+            }
+        });
     }
 
     /// <summary>
-    /// Обновить профиль
+    /// Обновление профиля
     /// </summary>
     [HttpPut("profile")]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request, CancellationToken cancellationToken)
@@ -184,7 +210,7 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Изменить пароль
+    /// Смена пароля
     /// </summary>
     [HttpPost("change-password")]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request, CancellationToken cancellationToken)

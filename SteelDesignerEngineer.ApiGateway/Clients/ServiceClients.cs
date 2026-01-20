@@ -235,3 +235,40 @@ public class PageContentServiceClient : IPageContentServiceClient
         );
     }
 }
+
+/// <summary>
+/// Search Service client implementation using RabbitMQ RPC
+/// </summary>
+public class SearchServiceClient : ISearchServiceClient
+{
+    private readonly RabbitMqRpcClient _rpcClient;
+    private readonly ILogger<SearchServiceClient> _logger;
+
+    public SearchServiceClient(RabbitMqRpcClient rpcClient, ILogger<SearchServiceClient> logger)
+    {
+        _rpcClient = rpcClient;
+        _logger = logger;
+    }
+
+    public async Task<SemanticSearchResponse?> SemanticSearchAsync(SemanticSearchRequest request, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Calling Search Service: semantic search");
+        return await _rpcClient.CallAsync<SemanticSearchRequest, SemanticSearchResponse>(
+            MessageQueues.SearchServiceRequestQueue,
+            request,
+            MessageQueues.SemanticSearchType,
+            TimeSpan.FromSeconds(30)
+        );
+    }
+
+    public async Task<UpsertTextEmbeddingResponse?> UpsertTextEmbeddingAsync(UpsertTextEmbeddingRequest request, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Calling Search Service: upsert text embedding");
+        return await _rpcClient.CallAsync<UpsertTextEmbeddingRequest, UpsertTextEmbeddingResponse>(
+            MessageQueues.SearchServiceRequestQueue,
+            request,
+            MessageQueues.UpsertTextEmbeddingType,
+            TimeSpan.FromSeconds(60)
+        );
+    }
+}

@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SteelDesignerEngineer.ApiGateway.Clients;
 using SteelDesignerEngineer.Contracts.Messages;
@@ -10,7 +9,9 @@ public class SessionCookieMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<SessionCookieMiddleware> _logger;
-    private const string SessionCookieName = "SDE_SessionId";
+
+    // Must match Cookie.Name configured in Program.cs (AddSession)
+    private const string SessionCookieName = ".SteelDesignerEngineer.Session";
 
     public SessionCookieMiddleware(RequestDelegate next, ILogger<SessionCookieMiddleware> logger)
     {
@@ -30,10 +31,19 @@ public class SessionCookieMiddleware
                 {
                     context.Items["UserId"] = res.UserId;
                     context.Items["SessionId"] = sessionId;
+                    context.Items["UserRole"] = res.UserRole;
+                    context.Items["UserEmail"] = res.UserEmail;
+                    context.Items["UserName"] = res.UserName;
                 }
                 else
                 {
-                    DeleteSessionCookie(context);
+                    // Do not delete cookie on null/invalid response (can be transient)
+                    // We only treat the request as unauthenticated.
+                    context.Items.Remove("UserId");
+                    context.Items.Remove("SessionId");
+                    context.Items.Remove("UserRole");
+                    context.Items.Remove("UserEmail");
+                    context.Items.Remove("UserName");
                 }
             }
 
@@ -48,10 +58,13 @@ public class SessionCookieMiddleware
 
     public static void SetSessionCookie(HttpContext context, string sessionId, TimeSpan expiration)
     {
+        var secure = !context.Request.Host.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+                     && context.Request.IsHttps;
+
         var cookieOptions = new CookieOptions
         {
             HttpOnly = true,
-            Secure = context.Request.IsHttps,
+            Secure = secure,
             SameSite = SameSiteMode.Lax,
             Expires = DateTimeOffset.UtcNow.Add(expiration),
             Path = "/"
@@ -62,10 +75,13 @@ public class SessionCookieMiddleware
 
     public static void DeleteSessionCookie(HttpContext context)
     {
+        var secure = !context.Request.Host.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+                     && context.Request.IsHttps;
+
         context.Response.Cookies.Delete(SessionCookieName, new CookieOptions
         {
             Path = "/",
-            Secure = context.Request.IsHttps,
+            Secure = secure,
             SameSite = SameSiteMode.Lax
         });
     }

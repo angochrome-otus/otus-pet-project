@@ -51,6 +51,17 @@ public static class MessageQueues
     public const string DeletePageType = "page.delete";
     
     // ==========================================
+    // Search Service Queues
+    // ==========================================
+
+    public const string SearchServiceRequestQueue = "search.service.requests";
+    public const string SearchServiceResponseQueue = "search.service.responses";
+
+    // Message types for Search Service
+    public const string SemanticSearchType = "search.semantic";
+    public const string UpsertTextEmbeddingType = "search.upsertText";
+
+    // ==========================================
     // Event Exchange (Pub-Sub Pattern)
     // ==========================================
     
@@ -89,6 +100,7 @@ public static class ServiceNames
     public const string AuthService = "AuthService";
     public const string SessionService = "SessionService";
     public const string PageContentService = "PageContentService";
+    public const string SearchService = "SearchService";
 }
 
 /// <summary>

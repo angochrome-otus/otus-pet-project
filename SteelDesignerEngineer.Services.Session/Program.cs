@@ -7,6 +7,7 @@ using StackExchange.Redis;
 using SteelDesignerEngineer.Services.Session;
 using SteelDesignerEngineer.Services.Session.Messaging;
 using SteelDesignerEngineer.Services.Session.Persistence;
+using SteelDesignerEngineer.Services.Session.Startup;
 
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()
@@ -60,6 +61,8 @@ try
 
     // Register RPC Server
     builder.Services.AddHostedService<SessionServiceWorker>();
+    // Init database (collections)
+    builder.Services.AddHostedService<SessionDatabaseInitializer>();
 
     var host = builder.Build();
 

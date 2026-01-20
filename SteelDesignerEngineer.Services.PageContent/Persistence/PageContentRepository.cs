@@ -1,3 +1,5 @@
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 
 namespace SteelDesignerEngineer.Services.PageContent.Persistence;
@@ -9,12 +11,6 @@ internal sealed class PageContentRepository
     public PageContentRepository(IMongoDatabase database)
     {
         _collection = database.GetCollection<PageContentDocument>("pageContents");
-
-        var pageNameIndex = new CreateIndexModel<PageContentDocument>(
-            Builders<PageContentDocument>.IndexKeys.Ascending(x => x.PageName),
-            new CreateIndexOptions { Unique = true });
-
-        _collection.Indexes.CreateOne(pageNameIndex);
     }
 
     public Task<PageContentDocument?> GetByIdAsync(string id, CancellationToken ct = default)
@@ -30,18 +26,27 @@ internal sealed class PageContentRepository
     {
         doc.LastModified = DateTime.UtcNow;
 
-        var filter = Builders<PageContentDocument>.Filter.Eq(x => x.PageName, doc.PageName);
+        var filter = !string.IsNullOrWhiteSpace(doc.Id)
+            ? Builders<PageContentDocument>.Filter.Eq(x => x.Id, doc.Id)
+            : Builders<PageContentDocument>.Filter.Eq(x => x.PageName, doc.PageName);
+
         await _collection.ReplaceOneAsync(filter, doc, new ReplaceOptions { IsUpsert = true }, ct);
         return doc;
     }
 
-    public Task<bool> DeleteByPageNameAsync(string pageName, CancellationToken ct = default)
-        => _collection.DeleteOneAsync(x => x.PageName == pageName, ct).ContinueWith(t => t.Result.DeletedCount > 0, ct);
+    public async Task<bool> DeleteByPageNameAsync(string pageName, CancellationToken ct = default)
+    {
+        var res = await _collection.DeleteOneAsync(x => x.PageName == pageName, ct);
+        return res.DeletedCount > 0;
+    }
 }
 
 internal sealed class PageContentDocument
 {
-    public string Id { get; set; } = Guid.NewGuid().ToString("N");
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string Id { get; set; } = ObjectId.GenerateNewId().ToString();
+
     public string PageName { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;

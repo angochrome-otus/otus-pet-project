@@ -49,10 +49,24 @@ jobs:
           --logger "trx;LogFileName=test-results.trx" \
           --results-directory ./TestResults
       continue-on-error: true
+
+    - name: Check for TRX results
+      id: check-trx
+      if: steps.check-tests.outputs.has_tests == 'true' && always()
+      run: |
+        shopt -s globstar nullglob
+        files=(TestResults/**/*.trx)
+        if [ ${#files[@]} -gt 0 ]; then
+          echo "has_trx=true" >> $GITHUB_OUTPUT
+          echo "Found ${#files[@]} TRX file(s)."
+        else
+          echo "has_trx=false" >> $GITHUB_OUTPUT
+          echo "::notice::No TRX test report files were found"
+        fi
       
     - name: Publish test results
       uses: dorny/test-reporter@v1
-      if: steps.check-tests.outputs.has_tests == 'true' && always()
+      if: steps.check-trx.outputs.has_trx == 'true' && always()
       with:
         name: Test Results
         path: 'TestResults/**/*.trx'
@@ -60,7 +74,7 @@ jobs:
         fail-on-error: false
         
     - name: Upload test results
-      if: steps.check-tests.outputs.has_tests == 'true' && always()
+      if: steps.check-trx.outputs.has_trx == 'true' && always()
       uses: actions/upload-artifact@v4
       with:
         name: test-results

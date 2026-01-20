@@ -65,12 +65,20 @@ internal sealed class AuthRpcServer : RabbitMqRpcServer
             return new RegisterUserResponse { Success = false, Message = "User with this email already exists" };
         }
 
+        var requestedRole = (request.Role ?? string.Empty).Trim().ToLowerInvariant();
+        var role = requestedRole switch
+        {
+            "teacher" => "teacher",
+            "student" => "student",
+            _ => "student"
+        };
+
         var user = new UserDocument
         {
             Email = request.Email,
             FirstName = request.FirstName,
             LastName = request.LastName,
-            Role = string.IsNullOrWhiteSpace(request.Role) ? "student" : request.Role.ToLowerInvariant(),
+            Role = role,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             CreatedAt = DateTime.UtcNow,
             IsActive = true

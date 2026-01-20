@@ -1,0 +1,110 @@
+@page "/register"
+@model SteelDesignerEngineer.ApiGateway.Pages.RegisterModel
+@{
+    ViewData["Title"] = "Регистрация";
+}
+
+@section Head {
+    <style>
+        .register-container{max-width:500px; width:100%;}
+        .card{background:var(--card-bg); border-radius:20px; padding:40px; box-shadow:0 20px 60px rgba(0,0,0,0.2);}
+        
+        .logo-section{text-align:center; margin-bottom:30px;}
+        .logo{width:80px; height:80px; background:#1976D2; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:22px; font-weight:bold; color:white; margin-bottom:16px; letter-spacing:1px;}
+        .logo-section h1{font-size:24px; margin-bottom:6px; color:#333;}
+        .logo-section p{color:var(--muted); font-size:14px;}
+        
+        .form-group{margin-bottom:20px;}
+        .form-group label{display:block; margin-bottom:8px; font-weight:600; color:#333;}
+        .form-group input, .form-group select{width:100%; padding:14px; border:2px solid #e0e0e0; border-radius:10px; font-size:16px; background:white;}
+        .form-group input:focus, .form-group select:focus{outline:none; border-color:var(--primary-1);}
+        
+        .form-row{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+        
+        .btn{width:100%; padding:14px; border:none; border-radius:10px; font-size:16px; font-weight:600; cursor:pointer; transition:all 0.3s;}
+        .btn-primary{background:linear-gradient(135deg, var(--primary-1), var(--primary-2)); color:white; box-shadow:0 4px 15px rgba(102, 126, 234, 0.4);}
+        
+        .login-link{text-align:center; margin-top:24px; color:#666;}
+        .login-link a{color:var(--primary-1); text-decoration:none; font-weight:600;}
+        
+        .back-link{text-align:center; margin-top:20px;}
+        .back-link a{color:white; text-decoration:none; display:inline-flex; align-items:center; gap:6px; font-weight:500;}
+        
+        .alert{padding:12px; border-radius:8px; margin-bottom:20px;}
+        .alert-success{background:#d4edda; color:#155724; border:1px solid #c3e6cb;}
+        .alert-danger{background:#f8d7da; color:#721c24; border:1px solid #f5c6cb;}
+        
+        @@media (max-width:520px){
+            .form-row{grid-template-columns:1fr;}
+        }
+    </style>
+}
+
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;">
+    <div class="register-container">
+        <div class="card">
+            <div class="logo-section">
+                <div class="logo">SDI</div>
+                <h1>Создать аккаунт</h1>
+                <p>Steel Designer Engineer</p>
+            </div>
+            
+            @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+            {
+                <div class="alert alert-success">@Model.SuccessMessage</div>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+            {
+                <div class="alert alert-danger">@Html.Raw(Model.ErrorMessage)</div>
+            }
+            
+            <form method="post">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="firstName">Имя *</label>
+                        <input type="text" id="firstName" name="FirstName" value="@Model.FirstName" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="lastName">Фамилия *</label>
+                        <input type="text" id="lastName" name="LastName" value="@Model.LastName" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email *</label>
+                    <input type="email" id="email" name="Email" value="@Model.Email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="role">Роль *</label>
+                    <select id="role" name="Role" required>
+                        <option value="" selected="@(string.IsNullOrWhiteSpace(Model.Role))" disabled>Выберите роль</option>
+                        <option value="Student" selected="@(Model.Role == "Student")">Студент</option>
+                        <option value="Teacher" selected="@(Model.Role == "Teacher")">Преподаватель</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Пароль *</label>
+                    <input type="password" id="password" name="Password" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirmPassword">Подтвердите пароль *</label>
+                    <input type="password" id="confirmPassword" name="ConfirmPassword" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
+            </form>
+            
+            <div class="login-link">
+                Уже есть аккаунт? <a href="/login">Войти</a>
+            </div>
+        </div>
+        
+        <div class="back-link">
+            <a href="/">< Назад на главную</a>
+        </div>
+    </div>
+</div>

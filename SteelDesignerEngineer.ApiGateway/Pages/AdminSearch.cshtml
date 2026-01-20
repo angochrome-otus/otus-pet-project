@@ -1,0 +1,57 @@
+@page "/admin-search"
+@using SteelDesignerEngineer.ApiGateway.Session
+@model SteelDesignerEngineer.ApiGateway.Pages.AdminSearchModel
+@{
+    ViewData["Title"] = "Админ: Поиск";
+}
+
+<div class="wrap" style="max-width:980px;margin:0 auto;padding:24px;">
+    <div class="header" style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;">
+        <div>
+            <h1>Админ: встраивания / Qdrant</h1>
+            <a class="toplink" href="/admin-dashboard">Назад к панели администратора</a>
+        </div>
+        <form method="post" asp-page-handler="Logout">
+            <button class="btn btn-logout" type="submit">Выйти</button>
+        </form>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div style="margin-top:14px; color:#721c24; background:#f8d7da; border:1px solid #f5c6cb; padding:12px; border-radius:10px;">@Model.ErrorMessage</div>
+    }
+
+    <div class="card" style="margin-top:16px; background:white; border-radius:16px; padding:20px;">
+        <h3>Сгенерировать встраивание и добавить в Qdrant</h3>
+        <p class="muted">Отправляет текст в Ollama → получает встраивание → добавляет точку в коллекцию Qdrant.</p>
+
+        <form method="post" asp-page-handler="Upsert">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div>
+                    <label>Коллекция</label>
+                    <input name="CollectionName" value="@Model.CollectionName" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:10px;" />
+                </div>
+                <div>
+                    <label>PointId (необязательно)</label>
+                    <input name="PointId" value="@Model.PointId" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:10px;" />
+                </div>
+            </div>
+
+            <div style="margin-top:12px;">
+                <label>Текст</label>
+                <textarea name="Text" rows="6" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:10px;">@Model.Text</textarea>
+            </div>
+
+            <div style="margin-top:12px; display:flex; gap:10px;">
+                <button class="btn" type="submit" style="background:#111;color:white;padding:10px 14px;border-radius:10px;">Добавить</button>
+            </div>
+        </form>
+
+        @if (!string.IsNullOrWhiteSpace(Model.ResultJson))
+        {
+            <hr style="margin:18px 0; border:none; border-top:1px solid #eee;" />
+            <h4>Ответ (JSON)</h4>
+            <pre style="white-space:pre-wrap; word-break:break-word; background:#f6f8fa; padding:12px; border-radius:10px;">@Model.ResultJson</pre>
+        }
+    </div>
+</div>

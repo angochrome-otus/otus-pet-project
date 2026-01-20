@@ -75,7 +75,7 @@ public sealed class RabbitMqRpcClient : IDisposable
             await _channel.BasicPublishAsync(
                 exchange: "",
                 routingKey: requestQueue,
-                mandatory: true,
+                mandatory: false,
                 basicProperties: props,
                 body: body);
         }

@@ -1,0 +1,30 @@
+@page "/admin-dashboard"
+@model SteelDesignerEngineer.ApiGateway.Pages.AdminDashboardModel
+@{
+    ViewData["Title"] = "Панель администратора";
+}
+
+<div class="wrap">
+    <div class="header">
+        <div>
+            <h1>Панель администратора</h1>
+            <a class="toplink" href="/profile">Профиль</a>
+            <a class="toplink" href="/admin-search" style="margin-left:12px;">Встраивания / Qdrant</a>
+        </div>
+        <form method="post" asp-page-handler="Logout">
+            <button class="btn btn-logout" type="submit">Выйти</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <p><strong>@Model.FullName</strong> (<span class="muted">@Model.Email</span>)</p>
+        <p class="muted">Минимальная серверная панель администратора (без JS).</p>
+
+        <div style="margin-top:12px;">
+            <a class="btn" href="/swagger" style="background:#111;color:white;padding:10px 14px;border-radius:8px;text-decoration:none;display:inline-block;">Открыть Swagger</a>
+        </div>
+
+        <hr style="margin:16px 0; border:none; border-top:1px solid #eee;" />
+        <p><strong>ID пользователя:</strong> @Model.UserId</p>
+    </div>
+</div>

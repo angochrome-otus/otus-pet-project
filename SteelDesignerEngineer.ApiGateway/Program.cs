@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Mvc;
 using SteelDesignerEngineer.ApiGateway.Clients;
 using SteelDesignerEngineer.ApiGateway.Messaging;
 using SteelDesignerEngineer.ApiGateway.Session;
@@ -26,6 +28,26 @@ builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>()
 
 builder.Services.AddControllersWithViews().AddRazorRuntimeCompilation();
 builder.Services.AddRazorPages();
+
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var errors = context.ModelState
+            .Where(kvp => kvp.Value?.Errors.Count > 0)
+            .ToDictionary(
+                kvp => kvp.Key,
+                kvp => kvp.Value!.Errors.Select(e => string.IsNullOrWhiteSpace(e.ErrorMessage) ? "Invalid value" : e.ErrorMessage).ToArray()
+            );
+
+        return new BadRequestObjectResult(new
+        {
+            success = false,
+            message = "Validation failed",
+            errors
+        });
+    };
+});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -65,7 +87,10 @@ builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromHours(24);
     options.Cookie.HttpOnly = true;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.None;
+    // Secure should be enabled only when request is HTTPS (or behind proxy with forwarded proto)
+    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+        ? CookieSecurePolicy.SameAsRequest
+        : CookieSecurePolicy.Always;
     options.Cookie.SameSite = SameSiteMode.Lax;
     options.Cookie.IsEssential = true;
     options.Cookie.Name = ".SteelDesignerEngineer.Session";
@@ -98,6 +123,15 @@ builder.Services.AddSingleton<RabbitMqRpcClient>();
 builder.Services.AddScoped<IAuthServiceClient, AuthServiceClient>();
 builder.Services.AddScoped<ISessionServiceClient, SessionServiceClient>();
 builder.Services.AddScoped<IPageContentServiceClient, PageContentServiceClient>();
+builder.Services.AddScoped<ISearchServiceClient, SearchServiceClient>();
+
+// Forwarded headers so IsHttps works behind ingress
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 var app = builder.Build();
 
@@ -123,9 +157,44 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "swagger";
 });
 
-app.UseDefaultFiles();
-app.UseHttpsRedirection();
+// Restrict Swagger to authenticated admins only
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/swagger", StringComparison.OrdinalIgnoreCase))
+    {
+        if (!context.IsSessionAuthenticated())
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            await context.Response.WriteAsJsonAsync(new { message = "Not authenticated" });
+            return;
+        }
+
+        var role = (context.Items.TryGetValue("UserRole", out var r) ? r as string : null) ?? string.Empty;
+        if (!string.Equals(role, "admin", StringComparison.OrdinalIgnoreCase))
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            await context.Response.WriteAsJsonAsync(new { message = "Forbidden" });
+            return;
+        }
+    }
+
+    await next();
+});
+
+app.UseForwardedHeaders();
+
+// Enable HTTPS redirection only when HTTPS is actually configured
+var urls = builder.Configuration["ASPNETCORE_URLS"];
+var httpsEnabled = (!string.IsNullOrWhiteSpace(urls) && urls.Contains("https", StringComparison.OrdinalIgnoreCase))
+                   || builder.Configuration.GetValue<bool>("EnableHttpsRedirection");
+if (httpsEnabled)
+{
+    app.UseHttpsRedirection();
+}
+
+// Serve wwwroot assets (favicon, etc.)
 app.UseStaticFiles();
+
 app.UseRouting();
 
 app.UseCors("AllowAll");
@@ -133,6 +202,8 @@ app.UseSession();
 
 app.UseMiddleware<SessionCookieMiddleware>();
 
+// Ensure HttpContext.User etc. are populated before Authorization (even if you later add auth)
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions { Predicate = _ => false });

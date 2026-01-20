@@ -1,0 +1,73 @@
+@page "/search"
+@model SteelDesignerEngineer.ApiGateway.Pages.SearchModel
+@{
+    ViewData["Title"] = "Поиск";
+}
+
+<div class="site-wrap">
+    <header>
+        <a class="brand" href="/">
+            <div class="logo">SDI</div>
+            <div class="brand-text">
+                <h1>SDI</h1>
+                <p>Steel Designer Engineer</p>
+            </div>
+        </a>
+        <nav>
+            <a href="/">Главная</a>
+            <a href="/profile">Профиль</a>
+        </nav>
+    </header>
+
+    <div class="card" style="max-width:900px;margin:0 auto;">
+        <form method="get" action="/search" style="display:flex; gap:12px; align-items:center;">
+            <input name="q" value="@Model.Query" placeholder="Поиск (семантический)..." style="flex:1;padding:12px 14px;border:2px solid #e0e0e0;border-radius:10px;font-size:16px;" />
+            <button class="btn btn-primary" type="submit">Поиск</button>
+        </form>
+
+        @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+        {
+            <div style="margin-top:16px; color:#721c24; background:#f8d7da; border:1px solid #f5c6cb; padding:12px; border-radius:10px;">@Model.ErrorMessage</div>
+        }
+
+        @if (Model.HasSearched)
+        {
+            <div style="margin-top:18px; color:#333;">
+                <strong>Результаты:</strong> @Model.ResultsCount
+            </div>
+
+            @if (Model.Items.Count == 0)
+            {
+                <div style="margin-top:12px; color: var(--muted);">Нет результатов</div>
+            }
+            else
+            {
+                <div style="margin-top:14px; display:flex; flex-direction:column; gap:12px;">
+                    @foreach (var item in Model.Items)
+                    {
+                        <div style="border:1px solid #eee; padding:14px; border-radius:12px;">
+                            <div style="display:flex; justify-content:space-between; gap:12px;">
+                                <div style="font-weight:700;">📄 @item.Title</div>
+                                <div style="color:var(--muted);">⭐ @item.Score.ToString("0.000")</div>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(item.PageName))
+                            {
+                                <div style="margin-top:6px;">
+                                    <a href="/@item.PageName" style="color: var(--primary-1); text-decoration:none; font-weight:600;">/@item.PageName</a>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(item.Snippet))
+                            {
+                                <div style="margin-top:10px; color:#444;">@item.Snippet</div>
+                            }
+                            @if (string.IsNullOrWhiteSpace(item.Snippet) && string.IsNullOrWhiteSpace(item.PageName))
+                            {
+                                <div style="margin-top:10px; color:var(--muted); font-size:13px;">ID: @item.Id</div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        }
+    </div>
+</div>

@@ -1,0 +1,25 @@
+@page "/student-dashboard"
+@model SteelDesignerEngineer.ApiGateway.Pages.StudentDashboardModel
+@{
+    ViewData["Title"] = "Панель студента";
+}
+
+<div class="wrap">
+    <div class="header">
+        <div>
+            <h1>Панель студента</h1>
+            <a class="toplink" href="/profile">Профиль</a>
+        </div>
+        <form method="post" asp-page-handler="Logout">
+            <button class="btn btn-logout" type="submit">Выйти</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <p><strong>@Model.FullName</strong> (<span class="muted">@Model.Email</span>)</p>
+        <p class="muted">Минимальная серверная панель студента (без JS).</p>
+        <hr style="margin:16px 0; border:none; border-top:1px solid #eee;" />
+        <p><strong>Записан на курсы:</strong> @Model.EnrolledCoursesCount</p>
+        <p><strong>Завершено курсов:</strong> @Model.CompletedCoursesCount</p>
+    </div>
+</div>

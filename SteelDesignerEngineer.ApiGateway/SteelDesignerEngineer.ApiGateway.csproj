@@ -59,8 +59,4 @@
     <ProjectReference Include="..\SteelDesignerEngineer.Contracts\SteelDesignerEngineer.Contracts.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Docs\" />
-  </ItemGroup>
-
 </Project>

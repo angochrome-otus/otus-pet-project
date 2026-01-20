@@ -39,3 +39,12 @@ public interface IPageContentServiceClient
     Task<UpdatePageResponse?> UpdatePageAsync(UpdatePageRequest request, CancellationToken cancellationToken = default);
     Task<DeletePageResponse?> DeletePageAsync(DeletePageRequest request, CancellationToken cancellationToken = default);
 }
+
+/// <summary>
+/// Client interface for Search Service communication
+/// </summary>
+public interface ISearchServiceClient
+{
+    Task<SemanticSearchResponse?> SemanticSearchAsync(SemanticSearchRequest request, CancellationToken cancellationToken = default);
+    Task<UpsertTextEmbeddingResponse?> UpsertTextEmbeddingAsync(UpsertTextEmbeddingRequest request, CancellationToken cancellationToken = default);
+}

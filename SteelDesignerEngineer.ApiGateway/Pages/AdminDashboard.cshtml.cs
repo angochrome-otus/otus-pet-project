@@ -1,0 +1,84 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using SteelDesignerEngineer.ApiGateway.Clients;
+using SteelDesignerEngineer.ApiGateway.Session;
+using SteelDesignerEngineer.Contracts.Messages;
+
+namespace SteelDesignerEngineer.ApiGateway.Pages;
+
+public class AdminDashboardModel : PageModel
+{
+    private readonly IAuthServiceClient _authServiceClient;
+    private readonly ISessionServiceClient _sessionServiceClient;
+
+    public AdminDashboardModel(IAuthServiceClient authServiceClient, ISessionServiceClient sessionServiceClient)
+    {
+        _authServiceClient = authServiceClient;
+        _sessionServiceClient = sessionServiceClient;
+    }
+
+    public string? ErrorMessage { get; set; }
+
+    public string UserId { get; private set; } = "-";
+    public string Email { get; private set; } = "-";
+    public string FirstName { get; private set; } = "-";
+    public string LastName { get; private set; } = "-";
+    public string FullName => $"{FirstName} {LastName}".Trim();
+
+    public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
+    {
+        if (!HttpContext.IsSessionAuthenticated())
+        {
+            return Redirect("/login");
+        }
+
+        var userId = HttpContext.GetUserIdFromSession();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Redirect("/login");
+        }
+
+        var res = await _authServiceClient.GetUserAsync(new GetUserRequest { UserId = userId }, cancellationToken);
+        if (res == null)
+        {
+            ErrorMessage = "Authentication service is temporarily unavailable.";
+            return Page();
+        }
+
+        if (!res.Success || string.IsNullOrWhiteSpace(res.UserId))
+        {
+            return Redirect("/login");
+        }
+
+        if (!string.Equals(res.Role, "admin", StringComparison.OrdinalIgnoreCase))
+        {
+            var role = (res.Role ?? string.Empty).ToLowerInvariant();
+            return Redirect(role switch
+            {
+                "teacher" => "/teacher-dashboard",
+                "student" => "/student-dashboard",
+                "admin" => "/admin-dashboard",
+                _ => "/profile"
+            });
+        }
+
+        UserId = res.UserId ?? "-";
+        Email = res.Email ?? "-";
+        FirstName = res.FirstName ?? "-";
+        LastName = res.LastName ?? "-";
+
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostLogoutAsync(CancellationToken cancellationToken)
+    {
+        var sessionId = HttpContext.GetSessionId();
+        if (!string.IsNullOrWhiteSpace(sessionId))
+        {
+            await _sessionServiceClient.DeleteSessionAsync(new DeleteSessionRequest { SessionId = sessionId }, cancellationToken);
+        }
+
+        SessionCookieMiddleware.DeleteSessionCookie(HttpContext);
+        return Redirect("/login");
+    }
+}

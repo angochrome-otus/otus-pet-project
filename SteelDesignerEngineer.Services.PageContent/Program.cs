@@ -6,6 +6,7 @@ using RabbitMQ.Client;
 using SteelDesignerEngineer.Services.PageContent;
 using SteelDesignerEngineer.Services.PageContent.Messaging;
 using SteelDesignerEngineer.Services.PageContent.Persistence;
+using SteelDesignerEngineer.Services.PageContent.Startup;
 
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()
@@ -48,6 +49,8 @@ try
 
     // Register RPC Server
     builder.Services.AddHostedService<PageContentServiceWorker>();
+    // Init database (collections/indexes)
+    builder.Services.AddHostedService<PageContentDatabaseInitializer>();
 
     var host = builder.Build();
 

@@ -1,3 +1,5 @@
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 
 namespace SteelDesignerEngineer.Services.Auth.Persistence;
@@ -12,16 +14,25 @@ internal sealed class UserRepository
 
         var emailIndex = new CreateIndexModel<UserDocument>(
             Builders<UserDocument>.IndexKeys.Ascending(x => x.Email),
-            new CreateIndexOptions { Unique = true });
+            new CreateIndexOptions { Unique = true, Name = "ux_users_email" });
 
-        _users.Indexes.CreateOne(emailIndex);
+        try
+        {
+            _users.Indexes.CreateOne(emailIndex);
+        }
+        catch (MongoCommandException ex) when (
+            ex.Message.Contains("Index already exists", StringComparison.OrdinalIgnoreCase) ||
+            ex.Message.Contains("already exists", StringComparison.OrdinalIgnoreCase))
+        {
+            // ignore: another initializer already created a unique index for Email
+        }
     }
 
     public Task<UserDocument?> GetByEmailAsync(string email, CancellationToken ct = default)
         => _users.Find(x => x.Email == email).FirstOrDefaultAsync(ct);
 
     public Task<UserDocument?> GetByIdAsync(string id, CancellationToken ct = default)
-        => _users.Find(x => x.Id == id).FirstOrDefaultAsync(ct);
+        => _users.Find(x => x.MongoId == id).FirstOrDefaultAsync(ct);
 
     public async Task<UserDocument> CreateAsync(UserDocument user, CancellationToken ct = default)
     {
@@ -30,12 +41,28 @@ internal sealed class UserRepository
     }
 
     public Task UpdateAsync(UserDocument user, CancellationToken ct = default)
-        => _users.ReplaceOneAsync(x => x.Id == user.Id, user, cancellationToken: ct);
+        => _users.ReplaceOneAsync(x => x.MongoId == user.MongoId, user, cancellationToken: ct);
 }
 
 internal sealed class UserDocument
 {
-    public string Id { get; set; } = Guid.NewGuid().ToString("N");
+    // Primary MongoDB document id (_id)
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string MongoId { get; set; } = ObjectId.GenerateNewId().ToString();
+
+    // Legacy field used previously in this project. Keep it to allow reading old documents.
+    [BsonElement("Id")]
+    [BsonIgnoreIfNull]
+    public string? LegacyId { get; set; }
+
+    [BsonIgnore]
+    public string Id
+    {
+        get => MongoId;
+        set => MongoId = value;
+    }
+
     public string Email { get; set; } = string.Empty;
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;

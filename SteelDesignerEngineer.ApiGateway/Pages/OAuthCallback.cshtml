@@ -1,0 +1,26 @@
+@page "/oauth-callback"
+@{
+    ViewData["Title"] = "OAuth Callback";
+}
+
+@section Head {
+    <style>
+        .card{max-width:720px;width:100%;background:var(--card-bg);border-radius:16px;padding:22px;box-shadow:0 4px 15px rgba(0,0,0,0.12);}
+        .muted{color:var(--muted);}
+        a{color:#1976D2;text-decoration:none;font-weight:600;}
+        a:hover{text-decoration:underline;}
+    </style>
+}
+
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;">
+    <div class="card">
+        <h2>OAuth callback</h2>
+        <p class="muted">
+            Этот URL используется как callback для OAuth провайдера.
+            Сейчас он не выполняет автоматический вход.
+        </p>
+        <p style="margin-top:12px;">
+            Перейти: <a href="/login">вход</a> или <a href="/profile">профиль</a>.
+        </p>
+    </div>
+</div>

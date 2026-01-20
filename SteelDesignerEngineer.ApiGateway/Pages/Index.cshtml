@@ -1,0 +1,131 @@
+@page "/"
+@using SteelDesignerEngineer.ApiGateway.Session
+@model SteelDesignerEngineer.ApiGateway.Pages.IndexModel
+@{
+    ViewData["Title"] = "Главная страница";
+    var profileUrl = HttpContext.IsSessionAuthenticated() ? "/profile" : "/login";
+}
+
+<div class="site-wrap">
+    <header>
+        <a class="brand" href="/">
+            <div class="logo">SDI</div>
+            <div class="brand-text">
+                <h1>SDI</h1>
+                <p>Steel Designer Engineer</p>
+            </div>
+        </a>
+
+        <form method="get" action="/search" style="flex:1; max-width:520px; display:flex; gap:10px; align-items:center;">
+            <input name="q" placeholder="Поиск (семантический)..." style="flex:1; padding:10px 12px; border-radius:10px; border:2px solid rgba(255,255,255,0.35); background:rgba(255,255,255,0.15); color:white;" />
+            <button class="btn btn-login" type="submit" style="white-space:nowrap;">Поиск</button>
+        </form>
+
+        <nav>
+            <a href="/">Главная</a>
+            <a href="#courses">Курсы</a>
+            <a href="#features">Возможности</a>
+            <a href="/login" class="btn btn-login">Войти</a>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <h2>Образовательная платформа для изучения металлических конструкций в режиме онлайн</h2>
+        <p>Эксперементальная платформа для инженеров-конструкторов: курсы, практические задания и API для автоматизации конструктивных расчетов металлических конструкций</p>
+        <div class="hero-buttons">
+            <a href="#courses" class="btn btn-primary">Старт обучения обучение</a>
+            <a href="@profileUrl" class="btn btn-login">Мой профиль</a>
+        </div>
+    </section>
+
+    <section class="courses" id="courses">
+        <div class="section-title">
+            <h3>Доступные курсы для изучения</h3>
+            <p>Выберите курс и начните обучение прямо сейчас</p>
+        </div>
+        <div class="courses-grid">
+            <div class="card course-card">
+                <div class="course-image">📝</div>
+                <span class="badge badge-success">Бесплатно</span>
+                <h4>Строительная механика металлических конструкций</h4>
+                <p>Изучите основные принципы строительной механики стальных конструкций. Подходит для начинающих.</p>
+                <div class="course-meta">
+                    <span>⏱ 12 часов</span>
+                    <span>📖 24 урока</span>
+                    <span>👥 1 10 студента</span>
+                </div>
+                <a href="/login" class="btn btn-primary" style="display:inline-block; margin-top:8px;">Начать курс</a>
+            </div>
+
+            <div class="card course-card">
+                <div class="course-image">🏗️</div>
+                <span class="badge badge-warning">Премиум</span>
+                <h4>Расчет балочных систем и моделирование в расчетных программах</h4>
+                <p>Курс по проектированию ключевых несущих элементов с практическими примерами и заданиями.</p>
+                <div class="course-meta">
+                    <span>⏱ 20 часов</span>
+                    <span>📖 36 уроков</span>
+                    <span>👥 10 студентов</span>
+                </div>
+                <a href="/login" class="btn btn-primary" style="display:inline-block; margin-top:8px;">Начать курс</a>
+            </div>
+
+            <div class="card course-card">
+                <div class="course-image">💻</div>
+                <span class="badge badge-primary">API</span>
+                <h4>Автоматизация расчетов с помощью API</h4>
+                <p>Использование Mathcad Prime для автоматизации строительных расчетов металлических конструкций.</p>
+                <div class="course-meta">
+                    <span>⏱ 8 часов</span>
+                    <span>📖 16 уроков</span>
+                    <span>👥 10 студента</span>
+                </div>
+                <a href="/login" class="btn btn-primary" style="display:inline-block; margin-top:8px;">Начать курс</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="features" id="features">
+        <div class="section-title">
+            <h3>Возможности платформы</h3>
+            <p>Все, что нужно для эффективного обучения и работы - Авторизоваться и начать обучение</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">📚</div>
+                <h4>Структурированные курсы</h4>
+                <p>Пошаговое обучение от основ до продвинутых тем с практическими упражнениями</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📝</div>
+                <h4>Практические задания</h4>
+                <p>Реальные кейсы и задачи для закрепления полученных знаний</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">💻</div>
+                <h4>REST API</h4>
+                <p>Полный доступ к API для автоматизации расчетов и интеграций</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h4>Отслеживание прогресса</h4>
+                <p>Статистика обучения, сертификаты и достижения</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">💬</div>
+                <h4>Сообщество</h4>
+                <p>Общайтесь с другими инженерами, делитесь опытом и решениями</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <h4>Мобильный доступ</h4>
+                <p>Учитесь в любое время с любого устройства</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2026 Steel Designer Engineer - Образовательный портал для инженеров</p>
+        <p>Поддержка: support@steel-designer-engineer.com</p>
+    </footer>
+</div>

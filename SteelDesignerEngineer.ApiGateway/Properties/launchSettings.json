@@ -4,9 +4,13 @@
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ConnectionStrings__MongoDB": "mongodb://admin:xxx711717XXX@72.56.72.77:32017/?authSource=admin&directConnection=true&tls=false",
+        "ConnectionStrings__Redis": "72.56.72.77:30079,password=xxx711717",
+        "ConnectionStrings__RabbitMQ": "amqp://admin:xxx711717XXX@72.56.72.77:30672",
+        "ASPNETCORE_URLS": "http://localhost:5000"
       },
-      "applicationUrl": "https://localhost:65030;http://localhost:65031"
+      "applicationUrl": "http://localhost:5000"
     }
   }
 }
